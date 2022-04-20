@@ -1,0 +1,177 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Options</title>
+  </head>
+
+  <body>
+    <div id="optionsDiv">
+      <label for="baseUrl">Base Url</label>
+      <input id="baseUrl" /> <br />
+      <label for="bearerToken">Bearer Token</label>
+      <input id="bearerToken" /> <br />
+      <label for="ahsPassword">AHS Password</label>
+      <input id="ahsPassword" type="password" /> <br />
+      <button id="submitBtn">Submit</button>
+    </div>
+    <script src="js/options.js"></script>
+  </body>
+</html> -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Options</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      input[type="text"],
+      input[type="password"],
+      select {
+        width: 100%;
+        padding: 7px 7px;
+        margin: 8px 0;
+        display: inline-block;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      .btn {
+        width: auto;
+        background: #2996d6;
+        color: white;
+        padding: 7px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      input[type="submit"]:hover {
+        background-color: #45a049;
+      }
+      .container {
+        border: 5px solid white;
+        border-radius: 5px;
+        background-color: #f2f2f2;
+        padding: 10px;
+      }
+
+      .column {
+        float: left;
+        width: 50%;
+        padding: 10px;
+        height: auto;
+      }
+
+      .row:after {
+        content: "";
+        display: table;
+        clear: both;
+      }
+    </style>
+
+    <style>
+      #snackbar {
+        visibility: hidden;
+        min-width: 250px;
+        margin-left: -125px;
+        background-color: rgb(76, 165, 16);
+        color: #fff;
+        text-align: center;
+        border-radius: 2px;
+        padding: 16px;
+        position: fixed;
+        z-index: 1;
+        left: 50%;
+        bottom: 30px;
+        font-size: 17px;
+      }
+
+      #snackbar.show {
+        visibility: visible;
+        -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        animation: fadein 0.5s, fadeout 0.5s 2.5s;
+      }
+
+      @-webkit-keyframes fadein {
+        from {
+          bottom: 0;
+          opacity: 0;
+        }
+
+        to {
+          bottom: 30px;
+          opacity: 1;
+        }
+      }
+
+      @keyframes fadein {
+        from {
+          bottom: 0;
+          opacity: 0;
+        }
+
+        to {
+          bottom: 30px;
+          opacity: 1;
+        }
+      }
+
+      @-webkit-keyframes fadeout {
+        from {
+          bottom: 30px;
+          opacity: 1;
+        }
+
+        to {
+          bottom: 0;
+          opacity: 0;
+        }
+      }
+
+      @keyframes fadeout {
+        from {
+          bottom: 30px;
+          opacity: 1;
+        }
+
+        to {
+          bottom: 0;
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+
+  <body style="width: 720px">
+    <div id="optionsDiv">
+      <label for="username">Username</label>
+      <input type="text" id="username" value="" /> <br />
+
+      <!-- <input type="text" id="username" value="mohamed@tlcnursing.com" /> <br /> -->
+      <label for="bearerToken">Password</label>
+      <input id="password" type="password" value="" /> <br />
+
+      <label for="bearerToken">AHS Password</label>
+      <input id="ahspassword" type="password" value="" /> <br />
+
+      <!-- <input  id="password" type="password" value="tlcnursing.com765" /> <br /> -->
+      <label for="baseUrl">Base Url</label>
+      <input type="text" id="baseUrl" value="" /> <br />
+
+      <!-- <input type="text" id="baseUrl" value="https://jazzhr.gotomy.dev" /> <br /> -->
+      <label for="bearerToken">Bearer Token</label>
+      <input type="text" id="bearerToken" /> <br />
+      <button id="fetchBtn" class="btn">Fetch Token</button>
+      <button id="submitBtn" class="btn">Submit</button>
+    </div>
+
+    <div id="snackbar">Some text some message..</div>
+
+    <script src="js/options.js"></script>
+  </body>
+</html>

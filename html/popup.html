@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <div class="containerr">
+      <div class="heading">
+        <div class="logos">
+          <div class="logo-circle">
+            <img class="logo sam" src="../images/sam.png" alt="sam" />
+          </div>
+          <div class="logo-circle">
+            <img class="logo oig" src="../images/oig.png" alt="oig" />
+          </div>
+          <div class="logo-circle">
+            <img
+              class="logo vermont"
+              src="../images/vermont.png"
+              alt="vermont"
+            />
+          </div>
+        </div>
+        <h5>Fill Data for User Verification</h5>
+      </div>
+      <!-- <hr /> -->
+      <div class="inner-container">
+        <div class="c-box">
+          <form action="" method="">
+            <div class="pair">
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img class="icon" src="../images/user.png" alt="altlname2" />
+                </div>
+                <input
+                  required
+                  class="form-control input-field"
+                  type="text"
+                  placeholder="First Name"
+                  name="fname"
+                  id="fname"
+                />
+              </div>
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img class="icon" src="../images/user.png" alt="altlname2" />
+                </div>
+                <input
+                  required
+                  type="text"
+                  class="form-control input-field"
+                  name="lname"
+                  placeholder="Last Name"
+                  id="lname"
+                />
+              </div>
+            </div>
+            <div class="pair">
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img class="icon" src="../images/user.png" alt="altlname2" />
+                </div>
+                <input
+                  required
+                  type="text"
+                  class="form-control input-field"
+                  name="mname"
+                  placeholder="Middle Name"
+                  id="mname"
+                />
+              </div>
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img class="icon" src="../images/user.png" alt="altlname2" />
+                </div>
+                <input
+                  required
+                  class="form-control input-field"
+                  type="text"
+                  name="altfname1"
+                  placeholder="Alternate First Name"
+                  id="altfname1"
+                />
+              </div>
+            </div>
+            <div class="pair">
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img class="icon" src="../images/user.png" alt="altlname2" />
+                </div>
+                <input
+                  required
+                  class="form-control input-field"
+                  type="text"
+                  name="altlname1"
+                  placeholder="Alternate Last Name"
+                  id="altlname1"
+                />
+              </div>
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img class="icon" src="../images/user.png" alt="altlname2" />
+                </div>
+                <input
+                  required
+                  class="form-control input-field"
+                  type="text"
+                  name="altfname2"
+                  placeholder="Alternate First Name"
+                  id="altfname2"
+                />
+              </div>
+            </div>
+            <div class="pair">
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img class="icon" src="../images/user.png" alt="altlname2" />
+                </div>
+                <input
+                  required
+                  type="text"
+                  class="form-control input-field"
+                  name="altlname2"
+                  placeholder="Alternate Last Name"
+                  id="altlname2"
+                />
+              </div>
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img
+                    class="icon"
+                    src="../images/geo-alt-fill.svg"
+                    alt="ssn"
+                  />
+                </div>
+                <input
+                  type="number"
+                  class="form-control input-field"
+                  min="0"
+                  placeholder="SSN"
+                  name="ssn"
+                  id="ssn"
+                />
+              </div>
+            </div>
+            <div class="pair">
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img
+                    class="icon"
+                    src="../images/geo-alt-fill.svg"
+                    alt="last4ssn"
+                  />
+                </div>
+                <input
+                  type="number"
+                  class="form-control input-field"
+                  name="last4ssn"
+                  placeholder="Last 4 SSN"
+                  id="last4ssn"
+                  maxlength="4"
+                  minlength="4"
+                  min="0"
+                />
+              </div>
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img class="icon" src="../images/location.png" alt="state" />
+                </div>
+                <input
+                  type="text"
+                  class="form-control input-field"
+                  name="state"
+                  placeholder="State"
+                  id="state"
+                />
+              </div>
+            </div>
+            <div class="pair">
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img class="icon" src="../images/location.png" alt="city" />
+                </div>
+                <input
+                  type="text"
+                  class="form-control input-field"
+                  name="city"
+                  placeholder="City"
+                  id="city"
+                />
+              </div>
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img
+                    class="icon"
+                    src="../images/road-with-broken-line.png"
+                    alt="street"
+                  />
+                </div>
+                <input
+                  type="text"
+                  class="form-control input-field"
+                  name="street"
+                  placeholder="Street"
+                  id="street"
+                />
+              </div>
+            </div>
+            <div class="pair">
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img class="icon" src="../images/zip-code.png" alt="zip" />
+                </div>
+                <input
+                  type="number"
+                  class="form-control input-field"
+                  placeholder="Zip"
+                  name="zip"
+                  min="0"
+                  id="zip"
+                  maxlength="5"
+                />
+              </div>
+
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img class="icon" src="../images/keyword.png" alt="keyword" />
+                </div>
+                <input
+                  required
+                  type="text"
+                  class="form-control input-field"
+                  placeholder="Keyword"
+                  name="keyword"
+                  id="keyword"
+                />
+              </div>
+            </div>
+            <div class="pair">
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img class="icon" src="../images/email.png" alt="email" />
+                </div>
+                <input
+                  type="email"
+                  class="form-control input-field"
+                  placeholder="Email"
+                  name="email"
+                  id="email"
+                />
+              </div>
+              <div class="form-group bday">
+                <label class="bold b-bold" for="bday">Birthday:</label>
+
+                <input class="form-control" type="date" name="bday" id="bday" />
+              </div>
+            </div>
+
+            <label class="bold" for="bday">Birthplace:</label>
+            <div class="pair">
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img class="icon" src="../images/germany.png" alt="country" />
+                </div>
+                <input
+                  type="text"
+                  class="form-control input-field"
+                  placeholder="Country"
+                  name="country"
+                  id="country"
+                />
+              </div>
+              <div class="form-group flex">
+                <div class="img-wrapper">
+                  <img class="icon" src="../images/location.png" alt="state2" />
+                </div>
+                <input
+                  type="text"
+                  class="form-control input-field"
+                  name="state2"
+                  placeholder="State"
+                  id="state2"
+                />
+              </div>
+            </div>
+            <div class="pair">
+              <div class="form-group flex fieldWidth">
+                <div class="big-img-wrapper">
+                  <img class="icon" src="../images/location.png" alt="city2" />
+                </div>
+                <input
+                  type="text"
+                  class="form-control input-field"
+                  name="city2"
+                  placeholder="City"
+                  id="city2"
+                />
+              </div>
+              <div class="invisible"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="bold" for="gender">Gender:</label>
+              <br />
+              <input type="radio" id="male" name="gender" />
+              <label for="male">Male</label>
+              <input type="radio" id="female" name="gender" />
+              <label for="female">Female</label>
+              <input type="radio" id="other" name="gender" />
+              <label for="other">Other</label>
+            </div>
+            <div class="verify">
+              <button id="verify" type="submit" class="btn-verify">
+                Verify
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- Williston3! -->
+    <!-- Scripts -->
+    <!-- <script src="/js/popup.js"></script> -->
+  </body>
+</html>
