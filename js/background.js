@@ -1,5 +1,5 @@
 try {
-  importScripts("html2pdf.bundle.min.js");
+  importScripts("html2pdf.bundle.min.js", "canvg.min.js");
 } catch (e) {
   console.log(e);
 }

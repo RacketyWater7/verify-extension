@@ -60,7 +60,7 @@ function init() {
   window.addEventListener(
     "hashchange",
     function () {
-      console.log("hash");
+      console.log("hash url:", window.location.href);
       let url = window.location.href;
       url = url.split("/");
       if (
@@ -136,11 +136,23 @@ function init() {
             populateAhsLoginFields();
           }
         });
+        chrome.storage.sync.get(["ahsData"], function (result) {
+          if (result && result.ahsData) {
+            populateAhsLoginFields();
+          }
+        });
         break;
       }
       case "/ABC/Authorize_SU.cfm": {
         chrome.storage.sync.get(["source"], function (result) {
           if (result && result.source) {
+            let submitBtn = document.querySelector("form input");
+            submitBtn.click();
+          }
+        });
+
+        chrome.storage.sync.get(["ahsData"], function (result) {
+          if (result && result.ahsData) {
             let submitBtn = document.querySelector("form input");
             submitBtn.click();
           }
@@ -152,6 +164,11 @@ function init() {
         chrome.storage.sync.get(["source"], function (result) {
           if (result && result.source) {
             window.location.pathname = "/ABC/background_check.cfm";
+          }
+        });
+        chrome.storage.sync.get(["ahsData"], function (result) {
+          if (result && result.ahsData) {
+            window.location.pathname = "/ABC/org_status.cfm";
           }
         });
         break;
@@ -241,21 +258,18 @@ function init() {
         break;
       }
       case "/ABC/org_status.cfm": {
-        if (search.includes("email")) {
-          const urlParams = new URLSearchParams(search);
-          let prospectEmail = urlParams.get("email");
-          let name = urlParams.get("name");
-          chrome.storage.sync.set({
-            source: "jazzhr",
-          });
-          fetchAhsRequestDetails(prospectEmail, name);
-        }
+        chrome.storage.sync.get(["ahsData"], function (result) {
+          if (result && result.ahsData) {
+            let data = result.ahsData;
+            fetchAhsRequestDetails(data);
+          }
+        });
 
         break;
       }
       case "/ABC/show_list.cfm": {
-        chrome.storage.sync.get(["source"], function (result) {
-          if (result && result.source) {
+        chrome.storage.sync.get(["ahsData"], function (result) {
+          if (result && result.ahsData) {
             searchAhsRecord();
           }
         });
@@ -376,22 +390,28 @@ function init() {
           if (result && result.source) {
             if (window.location.hostname === "www.google.com") {
               let captureElement = document.getElementsByTagName("body")[0];
+
+              let width = captureElement.scrollWidth;
+              let height = captureElement.scrollHeight;
               const opt = {
                 margin: 0,
                 filename: "google.pdf",
                 image: { type: "jpeg", quality: 1 },
-                html2canvas: { scale: 2 },
+                html2canvas: { scale: 1 },
                 enableLinks: false,
+                css_media_type: "print",
                 jsPDF: {
-                  orientation: "p",
-                  unit: "mm",
+                  orientation: "l",
+                  unit: "in",
                   format: "tabloid",
                   putOnlyUsedFonts: true,
                   floatPrecision: 16, // or "smart", default is 16
                 },
                 html2canvas: {
-                  // dpi: 300,
+                  dpi: 300,
                   // letterRendering: true,
+                  height: height,
+                  width: width,
                   useCORS: true,
                 },
               };
@@ -400,56 +420,17 @@ function init() {
               try {
                 await html2pdf()
                   .from(captureElement)
+                  .set(opt)
                   .outputPdf()
                   .then(function (pdf) {
                     let doc = { google: btoa(pdf) };
                     postDocument(doc);
-                    postRecord(
-                      "",
-                      "clientconnect",
-                      "https://clientconnect.otes.com/login"
-                    );
+                    // postRecord(
+                    //   "",
+                    //   "clientconnect",
+                    //   "https://clientconnect.otes.com/login"
+                    // );
                   });
-                // await html2pdf()
-                //   .set(opt)
-                //   .from(captureElement)
-                //   .toPdf()
-                //   .get("pdf")
-                //   .then(function (pdfObj) {
-                //     const perBlob = pdfObj.output("blob");
-                //     const blob = new Blob([perBlob], {
-                //       type: "application/pdf",
-                //     });
-                //     const google = new File([blob], "google.pdf", {
-                //       type: "application/pdf",
-                //     });
-
-                //     chrome.storage.local.get(["source"], function (result) {
-                //       let { source } = result;
-                //       source["google"] = google;
-                //       chrome.storage.local.set(
-                //         {
-                //           source: source,
-                //         },
-                //         function () {
-                //           if (chrome.runtime.lastError) {
-                //             /* error */
-                //             console.log(chrome.runtime.lastError.message);
-                //             return;
-                //           }
-                //           /* success */
-                //           console.log("success");
-                //         }
-                //       );
-                //       console.log("source inside: ", source);
-                //     });
-
-                //     postRecord(
-                //       "",
-                //       "clientconnect",
-                //       "https://clientconnect.otes.com/login"
-                //     );
-                //   });
               } catch (err) {
                 console.log("err:", err);
               }
@@ -630,20 +611,19 @@ function populateCandidateData(fields) {
             lastName: fieldValue,
           });
         }
-        if (key === "altfname1") {
+        if (key === "altfname1" && fieldValue) {
           document.getElementsByName("alias_1_first_name")[0].value =
             fieldValue;
         }
-        if (key === "altlname1") {
+        if (key === "altlname1" && fieldValue) {
           document.getElementsByName("alias_1_last_name")[0].value = fieldValue;
         }
-        if (key === "altfname2") {
+        if (key === "altfname2" && fieldValue) {
           document.getElementsByName("alias_2_first_name")[0].value =
             fieldValue;
         }
-        if (key === "altlname2") {
-          document.getElementsByName("alias_2_first_name")[0].value =
-            fieldValue;
+        if (key === "altlname2" && fieldValue) {
+          document.getElementsByName("alias_2_last_name")[0].value = fieldValue;
         }
         if (key === "bday") {
           let dateField = document.getElementsByName("dob_day")[0],
@@ -689,7 +669,7 @@ async function getConvictionRecord() {
       margin: 0,
       filename: "vcic.pdf",
       image: { type: "jpeg", quality: 1 },
-      html2canvas: { scale: 2 },
+      html2canvas: { scale: 1 },
       enableLinks: false,
       jsPDF: {
         orientation: "p",
@@ -708,6 +688,7 @@ async function getConvictionRecord() {
     try {
       await html2pdf()
         .from(captureElement)
+        .set(opt)
         .outputPdf()
         .then(function (pdf) {
           let doc = { vcic: btoa(pdf) };
@@ -763,7 +744,7 @@ function populateAhsLoginFields() {
         document.getElementsByName("fname")[0].value = firstName;
         document.getElementsByName("lname")[0].value = lastName;
         document.getElementsByName("ID")[0].value = orgId;
-        // document.getElementsByName('personalPassword')[0].value = '1550Williston!';
+        // document.getElementsByName('personalPassword')[0].value = 'Williston3!';
         document.getElementsByName("personalPassword")[0].value =
           result.ahsPassword;
         document.getElementsByName("login")[0].click();
@@ -1118,7 +1099,7 @@ function submitVerificationForm() {
     btnFetch.className = "btn-verify";
     btn.id = "verifybtn";
     btnFetch.id = "fetchbtn";
-
+    btn.style.width = "132px";
     btnContainer.appendChild(btn);
     btnContainer.appendChild(btnFetch);
     // btn.addEventListener("click", (e) => {
@@ -1140,10 +1121,10 @@ function submitVerificationForm() {
             document.getElementById("fname").value &&
             document.getElementById("lname").value &&
             document.getElementById("mname").value &&
-            document.getElementById("altfname1").value &&
-            document.getElementById("altlname1").value &&
-            document.getElementById("altfname2").value &&
-            document.getElementById("altlname2").value &&
+            // document.getElementById("altfname1").value &&
+            // document.getElementById("altlname1").value &&
+            // document.getElementById("altfname2").value &&
+            // document.getElementById("altlname2").value &&
             document.getElementById("ssn").value &&
             last4ssn &&
             document.getElementById("street").value &&
@@ -1222,6 +1203,9 @@ function submitVerificationForm() {
                           return;
                         }
                       );
+                      chrome.storage.sync.remove("ahsData", function () {
+                        console.log("ahsData removed");
+                      });
                       // chrome.tabs.create({
                       //   url: `https://secure.vermont.gov/DPS/criminalrecords/subscriber?email=${email}`,
                       // });
@@ -1276,10 +1260,10 @@ function submitVerificationForm() {
           document.getElementById("fname").value &&
           document.getElementById("lname").value &&
           document.getElementById("mname").value &&
-          document.getElementById("altfname1").value &&
-          document.getElementById("altlname1").value &&
-          document.getElementById("altfname2").value &&
-          document.getElementById("altlname2").value &&
+          // document.getElementById("altfname1").value &&
+          // document.getElementById("altlname1").value &&
+          // document.getElementById("altfname2").value &&
+          // document.getElementById("altlname2").value &&
           document.getElementById("ssn").value &&
           last4ssn &&
           document.getElementById("street").value &&
@@ -1313,28 +1297,12 @@ function submitVerificationForm() {
 
                     chrome.storage.sync.set(
                       {
-                        source: {
+                        ahsData: {
                           fname: document.getElementById("fname").value,
                           lname: document.getElementById("lname").value,
-                          gender: gender,
-                          mname: document.getElementById("mname").value,
-                          altfname1: document.getElementById("altfname1").value,
-                          altlname1: document.getElementById("altlname1").value,
-                          altfname2: document.getElementById("altfname2").value,
-                          altlname2: document.getElementById("altlname2").value,
-                          ssn: document.getElementById("ssn").value,
-                          last4ssn: document.getElementById("last4ssn").value,
-                          street: document.getElementById("street").value,
-                          city: document.getElementById("city").value,
-                          state: document.getElementById("state").value,
-                          zip: document.getElementById("zip").value,
-                          keyword: document.getElementById("keyword").value,
-                          birthplace: `${
-                            document.getElementById("city2").value
-                          }, ${document.getElementById("state2").value}, ${
-                            document.getElementById("country").value
-                          }`,
-                          bday: document.getElementById("bday").value,
+                          subFname: "Moe",
+                          subLname: "B",
+                          created_at: "2022-05-01",
                         },
                       },
                       function () {
@@ -1344,13 +1312,15 @@ function submitVerificationForm() {
                         );
                       }
                     );
+                    // remove source from storage
+                    chrome.storage.sync.remove("source", function () {
+                      console.log("source removed");
+                    });
                     // chrome.tabs.create({
                     //   url: `https://secure.vermont.gov/DPS/criminalrecords/subscriber?email=${email}`,
                     // });
                     window.open(
-                      `https://ahsnet.ahs.state.vt.us/ABC/org_status.cfm?name=${
-                        document.getElementById("fname").value
-                      }&email=${email}`,
+                      "https://ahsnet.ahs.state.vt.us/ABC/sign_on.cfm",
                       "_blank"
                     );
                     // get current tab and execute script
@@ -1401,16 +1371,23 @@ function fillApplicantForm() {
         document.getElementById("name.firstName").value = result.source.fname;
         document.getElementById("name.lastName").value = result.source.lname;
         document.getElementById("name.middleName").value = result.source.mname;
-        document.getElementById("aliases0.name.firstName").value =
-          result.source.altfname1;
-        document.getElementById("aliases0.name.lastName").value =
-          result.source.altlname1;
-        // click button with name add-alias
-        document.getElementsByName("add-alias")[0].click();
-        document.getElementById("aliases1.name.firstName").value =
-          result.source.altfname2;
-        document.getElementById("aliases1.name.lastName").value =
-          result.source.altlname2;
+        if (
+          result.source.altfname1 &&
+          result.source.altlname1 &&
+          result.source.altfname2 &&
+          result.source.altlname2
+        ) {
+          document.getElementById("aliases0.name.firstName").value =
+            result.source.altfname1;
+          document.getElementById("aliases0.name.lastName").value =
+            result.source.altlname1;
+          // click button with name add-alias
+          document.getElementsByName("add-alias")[0].click();
+          document.getElementById("aliases1.name.firstName").value =
+            result.source.altfname2;
+          document.getElementById("aliases1.name.lastName").value =
+            result.source.altlname2;
+        }
         document.getElementById("ssn").value = result.source.ssn;
         // document.getElementById("last4ssn").value = result.source.last4ssn;
         document.getElementById("currentAddress.street").value =
@@ -1583,6 +1560,7 @@ function sendExclusionRecord() {
     try {
       await html2pdf()
         .from(captureElement)
+        .set(opt)
         .outputPdf()
         .then(function (pdf) {
           let doc = { oig: btoa(pdf) };
@@ -1714,16 +1692,24 @@ function populateNewSamFormFields(fields) {
               .click();
           } else {
             let record = "No Record Found!";
+
             let captureElement = document.getElementsByTagName("body")[0];
+            // take everything in the body and put it in a div
+            // let captureElement = document.createElement("div");
+            // captureElement.appendChild(body.cloneNode(true));
+            // body.appendChild(captureElement);
+
+            let width = captureElement.scrollWidth;
+            let height = captureElement.scrollHeight;
             const opt = {
               margin: 0,
               filename: "sam.pdf",
               image: { type: "jpeg", quality: 1 },
-              html2canvas: { scale: 2 },
+              html2canvas: { scale: 1 },
               enableLinks: false,
               jsPDF: {
-                orientation: "p",
-                unit: "mm",
+                orientation: "l",
+                unit: "in",
                 format: "tabloid",
                 putOnlyUsedFonts: true,
                 floatPrecision: 16, // or "smart", default is 16
@@ -1731,6 +1717,8 @@ function populateNewSamFormFields(fields) {
               html2canvas: {
                 // dpi: 300,
                 // letterRendering: true,
+                height: height,
+                width: width,
                 useCORS: true,
               },
             };
@@ -1738,64 +1726,14 @@ function populateNewSamFormFields(fields) {
             await html2pdf().from(captureElement).set(opt).save();
             await html2pdf()
               .from(captureElement)
+              .set(opt)
               .outputPdf()
               .then(function (pdf) {
                 let doc = { sam: btoa(pdf) };
                 postDocument(doc);
                 postRecord(record, "google", "https://www.google.com");
-
-                // console.log("string base: ", btoa(pdf));
-                // chrome.storage.local.get(["source"], function (result) {
-                //   let { source } = result;
-                //   source["sam"] = btoa(pdf);
-                //   chrome.storage.local.set({ source: source }, function () {
-                //     postRecord(record, "google", "https://www.google.com");
-                //   });
-                // });
               });
             return;
-
-            // try {
-            //   html2pdf()
-            //     .set(opt)
-            //     .from(captureElement)
-            //     .toPdf()
-            //     .get("pdf")
-            //     .then(function (pdfObj) {
-            //       const perBlob = pdfObj.output("blob");
-            //       const blob = new Blob([perBlob], {
-            //         type: "application/pdf",
-            //       });
-            //       const sam = new File([blob], "sam.pdf", {
-            //         type: "application/pdf",
-            //       });
-            //       chrome.storage.local.get(["source"], function (result) {
-            //         let { source } = result;
-            //         source["sam"] = sam;
-
-            //         chrome.storage.local.set({ source: source }, function () {
-            //           if (chrome.runtime.lastError) {
-            //             /* error */
-            //             console.log(
-            //               "here came err: ",
-            //               chrome.runtime.lastError.message
-            //             );
-            //             return;
-            //           }
-            //           postRecord(record, "google", "https://www.google.com");
-            //         });
-            //         // log source from local storage
-            //         chrome.storage.local.get(["source"], function (result) {
-            //           let { source } = result;
-            //           console.log("source", source);
-            //         });
-            //       });
-            //     });
-            // } catch (err) {
-            //   console.log("err: ", err);
-            // }
-            // postRecord(record, 'SAM', 'https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm');
-            //  postRecord was here earlier, now moved to the end of the html2pdf function
           }
         }, 2000);
       }, 3000);
@@ -2024,32 +1962,31 @@ async function postDocument(doc) {
  * @param {string} name | name of the candidate
  */
 
-function fetchAhsRequestDetails(prospectEmail, name) {
-  if (prospectEmail) {
-    chrome.runtime.sendMessage(
-      { baseUrl, bearerToken, prospectEmail, type: "fetchAhsRecord" },
-      function (response) {
-        try {
-          let { data } = response;
-          if (data) {
-            chrome.storage.sync.set({
-              ahsData: data,
-              prospectEmail,
-              name,
-            });
-            let { created_at, updated_at } = data;
-            let fromDate = formatAhsDate(created_at);
-            let toDate = formatAhsDate(updated_at);
-            populateAhsDate(fromDate, toDate);
-          }
-        } catch (err) {
-          console.log(err.toString());
-          let desc = `${err.toString()} in fetchAhsRequestDetails() in Content Script`;
-          insertFailLog(desc);
-        }
-      }
-    );
+function fetchAhsRequestDetails(data) {
+  // chrome.runtime.sendMessage(
+  //   { baseUrl, bearerToken, prospectEmail, type: "fetchAhsRecord" },
+  //   function (response) {
+  //     try {
+  //       let { data } = response;
+  if (data) {
+    // chrome.storage.sync.set({
+    //   ahsData: data,
+    //   prospectEmail,
+    //   name,
+    // });
+    // let { created_at, updated_at } = data;
+    let fromDate = formatAhsDate(data.created_at);
+    let toDate = formatAhsDate(new Date());
+    populateAhsDate(fromDate, toDate);
   }
+
+  //     } catch (err) {
+  //       console.log(err.toString());
+  //       let desc = `${err.toString()} in fetchAhsRequestDetails() in Content Script`;
+  //       insertFailLog(desc);
+  //     }
+  //   }
+  // );
 }
 
 /**
@@ -2076,33 +2013,33 @@ function formatAhsDate(datetime) {
  */
 
 function populateAhsDate(from, to) {
-  chrome.storage.sync.get(["prospectEmail"], function (result) {
+  chrome.storage.sync.get(["ahsData"], function (result) {
     try {
-      let { prospectEmail } = result;
-      if (prospectEmail) {
-        chrome.runtime.sendMessage(
-          { baseUrl, bearerToken, prospectEmail, type: "fetchAhsStatus" },
-          function (response) {
-            try {
-              let { data } = response;
-              if (data) {
-                chrome.storage.sync.set({
-                  verificationStatus: data,
-                });
-                let fromInp = document.getElementsByName("from_dt")[0];
-                fromInp.value = from;
-                let toInp = document.getElementsByName("to_dt")[0];
-                toInp.value = to;
-                let submitBtn = document.getElementsByName("submit")[0];
-                submitBtn.click();
-              }
-            } catch (err) {
-              console.log(err.toString());
-              let desc = `${err.toString()} in populateAhsDate() at chrome.runtime.sendMessage({ baseUrl, bearerToken, prospectEmail, type: 'fetchAhsStatus' } in Content Script`;
-              insertFailLog(desc);
-            }
-          }
-        );
+      let { ahsData } = result;
+      if (ahsData) {
+        // chrome.runtime.sendMessage(
+        //   { baseUrl, bearerToken, prospectEmail, type: "fetchAhsStatus" },
+        //   function (response) {
+        //     try {
+        //       let { data } = response;
+        //       if (data) {
+        //         chrome.storage.sync.set({
+        //           verificationStatus: data,
+        //         });
+        let fromInp = document.getElementsByName("from_dt")[0];
+        fromInp.value = from;
+        let toInp = document.getElementsByName("to_dt")[0];
+        toInp.value = to;
+        let submitBtn = document.getElementsByName("submit")[0];
+        submitBtn.click();
+        //       }
+        //     } catch (err) {
+        //       console.log(err.toString());
+        //       let desc = `${err.toString()} in populateAhsDate() at chrome.runtime.sendMessage({ baseUrl, bearerToken, prospectEmail, type: 'fetchAhsStatus' } in Content Script`;
+        //       insertFailLog(desc);
+        //     }
+        //   }
+        // );
       }
     } catch (err) {
       console.log(err.toString());
@@ -2117,32 +2054,41 @@ function populateAhsDate(from, to) {
  */
 
 function searchAhsRecord() {
-  chrome.storage.sync.get(["name", "verificationStatus"], function (result) {
+  chrome.storage.sync.get(["ahsData"], function (result) {
     try {
-      let { name, verificationStatus } = result;
-      let { ahs_adult, ahs_child } = verificationStatus;
-      if (ahs_adult && ahs_child) {
-        // vNotify.success({ text: "Record already fetched" });
-        setTimeout(() => {
-          chrome.storage.sync.remove("fields");
-          chrome.storage.sync.remove("source", (result) => {
-            window.close();
-          });
-        }, 3000);
-        return;
-      }
-      if (name) {
+      let { fname, lname } = result;
+      // let { ahs_adult, ahs_child } = verificationStatus;
+      // if (ahs_adult && ahs_child) {
+      //   // vNotify.success({ text: "Record already fetched" });
+      //   setTimeout(() => {
+      //     chrome.storage.sync.remove("fields");
+      //     chrome.storage.sync.remove("source", (result) => {
+      //       window.close();
+      //     });
+      //   }, 3000);
+      //   return;
+      // }
+      if (fname) {
+        // select the column Submitted by
+        let col = document.getElementsByClassName("col-md-2")[0];
         let nameRows = document.querySelectorAll("[nowrap]");
         let nameMatched = false;
         let recordFound = false;
-        let candidateName = name.split(" ");
-        let firstName = candidateName[0];
-        let lastName = candidateName[1];
-        name = `${lastName}, ${firstName}`;
+        let firstName = fname;
+        let lastName = lname;
+        let subFname = "Moe";
+        let subLname = "B";
+        // document.querySelectorAll("[nowrap]")[0].parentNode.cells[2].innerText
+        let name = `${lastName}, ${firstName}`;
         let recordVerify = { child: false, adult: false };
         for (let i = 0; i < nameRows.length; i++) {
-          if (nameRows[i].innerText.includes(name)) {
-            nameMatched = true;
+          if (
+            nameRows[i].innerText.includes(name) &&
+            nameRows[i].parentNode.cells[2].innerText.includes(
+              `${subFname} ${subLname}`
+            )
+          ) {
+            nameMatched = true; //start work from here on
             chrome.storage.sync.set({
               firstName,
               lastName,
@@ -2181,9 +2127,9 @@ function searchAhsRecord() {
                   window.location.href = recordsRow[0].href;
                 } else {
                   // vNotify.error({ text: "One Record is under process" });
+                  alert("One Record is under process");
                   setTimeout(() => {
-                    chrome.storage.sync.remove("fields");
-                    chrome.storage.sync.remove("source");
+                    chrome.storage.sync.remove("ahsData");
                     window.close();
                   }, 5000);
                 }
@@ -2194,9 +2140,9 @@ function searchAhsRecord() {
         }
         if (!recordFound) {
           // vNotify.error({ text: "Record not found" });
+          alert("Record not found");
           setTimeout(() => {
-            chrome.storage.sync.remove("fields");
-            chrome.storage.sync.remove("source");
+            chrome.storage.sync.remove("ahsData");
             window.close();
           }, 3000);
         }
