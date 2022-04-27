@@ -42,6 +42,7 @@
       "matches": ["<all_urls>"],
       "js": [
         "/js/html2pdf.bundle.min.js",
+        "/js/svg-inject.min.js",
         "/js/canvg.min.js",
         "/js/screenshot.js",
         "/js/content-script.js",

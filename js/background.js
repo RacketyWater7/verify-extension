@@ -1,5 +1,5 @@
 try {
-  importScripts("html2pdf.bundle.min.js", "canvg.min.js");
+  importScripts("html2pdf.bundle.min.js", "canvg.min.js", "svg-inject.min.js");
 } catch (e) {
   console.log(e);
 }
@@ -95,12 +95,14 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     case "postData": {
       sendData(baseUrl, bearerToken, data).then((response) => {
         sendResponse(response);
+        return true;
       });
       return true;
     }
     case "postDoc": {
       sendDocument(baseUrl, bearerToken, doc, id).then((response) => {
         sendResponse(response);
+        return true;
       });
       return true;
     }

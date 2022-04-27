@@ -6,34 +6,32 @@ window.onload = function () {
 };
 
 function insertFailLog(description) {
-  chrome.runtime.sendMessage(
-    {
-      type: "insertLog",
-      payload: {
-        description: description,
-        result: "failure",
-        level: "error",
-      },
-    },
-    function (response) {}
-  );
+  // chrome.runtime.sendMessage(
+  //   {
+  //     type: "insertLog",
+  //     payload: {
+  //       description: description,
+  //       result: "failure",
+  //       level: "error",
+  //     },
+  //   },
+  //   function (response) {}
+  // );
 }
 
-window.onerror = function (error, url, line) {
-  if (url.includes("content-script.js") || url.includes("background.js")) {
-    let logDes = `Line: ${line} Error:${error} URL: ${url}`;
-    insertFailLog(logDes);
-  }
-};
+// window.onerror = function (error, url, line) {
+//   if (url.includes("content-script.js") || url.includes("background.js")) {
+//     let logDes = `Line: ${line} Error:${error} URL: ${url}`;
+//     insertFailLog(logDes);
+//   }
+// };
 
 /**
  * Fetch API Key from chrome storage
  */
 function fetchApiKey() {
   chrome.storage.sync.get(["baseUrl", "bearerToken"], function (result) {
-    console.log("result: ", result);
     try {
-      console.log(result);
       if (result.baseUrl) {
         baseUrl = result.baseUrl.replace(/\/$/, "");
         bearerToken = result.bearerToken;
@@ -79,6 +77,10 @@ function init() {
   try {
     let { pathname, search } = window.location;
     console.log(`pathname`, pathname);
+    if (pathname.includes("/signin/refresh-auth-state")) {
+      console.log("came in refresh-auth-state");
+      signInOkta();
+    }
     switch (pathname) {
       case "/DPS/criminalrecords/subscriber/": {
         console.log("inside /DPS/criminalrecords/subscriber/");
@@ -131,13 +133,16 @@ function init() {
         break;
       }
       case "/ABC/sign_on.cfm": {
+        console.log("at sign on");
         chrome.storage.sync.get(["source"], function (result) {
           if (result && result.source) {
+            console.log("inside source");
             populateAhsLoginFields();
           }
         });
         chrome.storage.sync.get(["ahsData"], function (result) {
           if (result && result.ahsData) {
+            console.log("inside ahsData");
             populateAhsLoginFields();
           }
         });
@@ -194,65 +199,8 @@ function init() {
       case "/ABC/search_registry.cfm": {
         chrome.storage.sync.get(["source"], async function (result) {
           if (result && result.source) {
-            // let captureElement = document.getElementsByTagName("body")[0];
-            // const opt = {
-            //   margin: 0,
-            //   filename: "ahs.pdf",
-            //   image: { type: "jpeg", quality: 1 },
-            //   html2canvas: { scale: 2 },
-            //   enableLinks: false,
-            //   jsPDF: {
-            //     orientation: "p",
-            //     unit: "mm",
-            //     format: "tabloid",
-            //     putOnlyUsedFonts: true,
-            //     floatPrecision: 16, // or "smart", default is 16
-            //   },
-            //   html2canvas: {
-            //     // dpi: 300,
-            //     // letterRendering: true,
-            //     useCORS: true,
-            //   },
-            // };
-            // await html2pdf().from(captureElement).set(opt).save();
-            try {
-              // await html2pdf()
-              //   .set(opt)
-              //   .from(captureElement)
-              //   .toPdf()
-              //   .get("pdf")
-              //   .then(function (pdfObj) {
-              //     const perBlob = pdfObj.output("blob");
-              //     const blob = new Blob([perBlob], {
-              //       type: "application/pdf",
-              //     });
-              //     const file_child = new File([blob], "ahs_child.pdf", {
-              //       type: "application/pdf",
-              //     });
-              //     const file_adult = new File([blob], "ahs_adult.pdf", {
-              //       type: "application/pdf",
-              //     });
-              //     chrome.storage.local.get(["source"], function (result) {
-              //       let { source } = result;
-              //       source["ahs_child"] = file_child;
-              //       source["ahs_adult"] = file_adult;
-              //       chrome.storage.local.set({
-              //         source: source,
-              //       });
-              //     });
-              // setTimeout(() => {
-              //   var obj = {};
-              //   var key = "ahs_child";
-              //   obj[key] += file_child;
-              //   chrome.storage.sync.set(obj);
-              //   // chrome.storage.sync.set({ ahs_child: file_child });
-              // }, 1000);
-              window.location =
-                "https://sam.gov/search/?index=ex&page=1&sort=-relevance&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BclassificationWrapper%5D%5Bclassification%5D=Individual";
-              // });
-            } catch (err) {
-              console.log("err:", err);
-            }
+            window.location =
+              "https://sam.gov/search/?index=ex&page=1&sort=-relevance&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BclassificationWrapper%5D%5Bclassification%5D=Individual";
           }
         });
         break;
@@ -277,14 +225,15 @@ function init() {
         break;
       }
       case "/ABC/show_clears.cfm": {
-        chrome.storage.sync.get(["source"], function (result) {
-          if (result && result.source) {
+        chrome.storage.sync.get(["ahsData"], function (result) {
+          if (result && result.ahsData) {
             const urlParams = new URLSearchParams(search);
             let recordType = urlParams.get("RegistryRecordTypeID");
             if (recordType === "6") {
               postAhsAdultRecord();
             } else if (recordType === "7") {
               postAhsChildRecord();
+            } else {
             }
           }
         });
@@ -310,16 +259,7 @@ function init() {
               searchGoogle(fields);
             }
             if (window.location.hostname === "otes.okta.com") {
-              let input = document.getElementById("idp-discovery-username");
-              input.value = "m@tlcnursing.com";
-              let subbut = document.getElementById("idp-discovery-submit");
-              subbut.click();
-              setTimeout(() => {
-                console.log("clicked");
-                input.value = "";
-                input.value = "m@tlcnursing.com";
-                subbut.click();
-              }, 3000);
+              signInOkta();
             }
             if (window.location.hostname === "clientconnect.otes.com") {
               let a = document.querySelector("a[href='/order/applicant']");
@@ -425,11 +365,11 @@ function init() {
                   .then(function (pdf) {
                     let doc = { google: btoa(pdf) };
                     postDocument(doc);
-                    // postRecord(
-                    //   "",
-                    //   "clientconnect",
-                    //   "https://clientconnect.otes.com/login"
-                    // );
+                    postRecord(
+                      "",
+                      "clientconnect",
+                      "https://clientconnect.otes.com/login"
+                    );
                   });
               } catch (err) {
                 console.log("err:", err);
@@ -438,6 +378,14 @@ function init() {
           }
         });
 
+        break;
+      }
+      case "/oauth2/default/v1/authorize": {
+        chrome.storage.sync.get(["source"], function (result) {
+          if (result && result.source) {
+            signInOkta();
+          }
+        });
         break;
       }
       case "/login": {
@@ -696,28 +644,6 @@ async function getConvictionRecord() {
           postDocument(doc);
           postRecord(record, "VCIC", "https://exclusions.oig.hhs.gov/");
         });
-      // await html2pdf()
-      //   .set(opt)
-      //   .from(captureElement)
-      //   .toPdf()
-      //   .get("pdf")
-      //   .then(function (pdfObj) {
-      //     const perBlob = pdfObj.output("blob");
-      //     const blob = new Blob([perBlob], {
-      //       type: "application/pdf",
-      //     });
-      //     const vcic = new File([blob], "vcic.pdf", {
-      //       type: "application/pdf",
-      //     });
-      //     chrome.storage.sync.get(["source"], function (result) {
-      //       let { source } = result;
-      //       source["vcic"] = vcic;
-      //       chrome.storage.local.set({
-      //         source: source,
-      //       });
-      //     });
-      //   });
-      // postRecord(record, "VCIC", "https://exclusions.oig.hhs.gov/");
     } catch (err) {
       console.log("error: ", err);
       let desc = `${err.toString()} in getConvictionRecord() in Content Script`;
@@ -1159,7 +1085,22 @@ function submitVerificationForm() {
                         document.getElementById("male").checked === true
                           ? "male"
                           : "female";
-                      // is using female fine instead of empty string????????????
+                      // is using female fine instead of empty string?
+                      let id = document.getElementById("user_id").value;
+                      if (id) {
+                        // => if id exists, then saving it for the pdf documents to be sent against this id
+                        // => if id doesn't exist, then it's a new user and we don't need to save it, because id will be generated by the server
+                        // => if the user loads an existing data, then changes the ssn and presses submit, then the id will be saved, but we need new id for the pdf documents
+                        //       in this case, since the ssn is changed, it is considered as a new userData, and it be overwritten by the id received from the server
+                        chrome.storage.sync.set(
+                          {
+                            id: document.getElementById("user_id").value,
+                          },
+                          function () {
+                            console.log("id set");
+                          }
+                        );
+                      }
                       chrome.storage.sync.set(
                         {
                           source: {
@@ -1200,7 +1141,6 @@ function submitVerificationForm() {
                             }
                           );
                           postData();
-                          return;
                         }
                       );
                       chrome.storage.sync.remove("ahsData", function () {
@@ -1221,7 +1161,7 @@ function submitVerificationForm() {
                         function (tabs) {
                           chrome.tabs.executeScript(
                             tabs[0].id,
-                            { file: "content_script.js" },
+                            { file: "content-script.js" },
                             function (result) {
                               console.log(result);
                             }
@@ -1246,6 +1186,16 @@ function submitVerificationForm() {
       });
     document.getElementById("fetchbtn").addEventListener("click", function (e) {
       e.preventDefault();
+      let created_at = document.getElementById("created_at").value;
+      let date = new Date(created_at);
+      let yyyy = date.getFullYear();
+
+      let mm = date.getMonth() + 1;
+      if (mm < 10) {
+        mm = "0" + mm;
+      }
+      let dd = date.getDate();
+      let dateString = `${yyyy}-${mm}-${dd}`;
       let last4ssn = document.getElementById("last4ssn").value;
       let ssn = document.getElementById("ssn").value;
       let email = document.getElementById("email").value;
@@ -1260,6 +1210,7 @@ function submitVerificationForm() {
           document.getElementById("fname").value &&
           document.getElementById("lname").value &&
           document.getElementById("mname").value &&
+          document.getElementById("user_id").value &&
           // document.getElementById("altfname1").value &&
           // document.getElementById("altlname1").value &&
           // document.getElementById("altfname2").value &&
@@ -1290,52 +1241,62 @@ function submitVerificationForm() {
                   if (bdayDate > today) {
                     alert("Birthdate cannot be in the future");
                   } else {
-                    let gender =
-                      document.getElementById("male").checked === true
-                        ? "male"
-                        : "";
-
-                    chrome.storage.sync.set(
-                      {
-                        ahsData: {
-                          fname: document.getElementById("fname").value,
-                          lname: document.getElementById("lname").value,
-                          subFname: "Moe",
-                          subLname: "B",
-                          created_at: "2022-05-01",
+                    // let gender =
+                    //   document.getElementById("male").checked === true
+                    //     ? "male"
+                    //     : "";
+                    if (created_at) {
+                      chrome.storage.sync.set(
+                        {
+                          ahsData: {
+                            fname: document.getElementById("fname").value,
+                            lname: document.getElementById("lname").value,
+                            subFname: "Moe",
+                            subLname: "B",
+                            created_at: dateString,
+                          },
                         },
-                      },
-                      function () {
-                        console.log(
-                          "Value is set to " +
-                            document.getElementById("fname").value
-                        );
-                      }
-                    );
-                    // remove source from storage
-                    chrome.storage.sync.remove("source", function () {
-                      console.log("source removed");
-                    });
-                    // chrome.tabs.create({
-                    //   url: `https://secure.vermont.gov/DPS/criminalrecords/subscriber?email=${email}`,
-                    // });
-                    window.open(
-                      "https://ahsnet.ahs.state.vt.us/ABC/sign_on.cfm",
-                      "_blank"
-                    );
-                    // get current tab and execute script
-                    chrome.tabs.query(
-                      { active: true, currentWindow: true },
-                      function (tabs) {
-                        chrome.tabs.executeScript(
-                          tabs[0].id,
-                          { file: "content_script.js" },
-                          function (result) {
-                            console.log(result);
-                          }
-                        );
-                      }
-                    );
+                        function () {
+                          console.log(
+                            "Value is set to " +
+                              document.getElementById("fname").value
+                          );
+                        }
+                      );
+                      chrome.storage.sync.set(
+                        {
+                          id: document.getElementById("user_id").value,
+                        },
+                        function () {
+                          console.log("id set");
+                        }
+                      );
+                      // remove source from storage
+                      chrome.storage.sync.remove("source", function () {
+                        console.log("source removed");
+                      });
+                      window.open(
+                        `https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm`,
+                        "_blank"
+                      );
+                      // get current tab and execute script
+                      chrome.tabs.query(
+                        { active: true, currentWindow: true },
+                        function (tabs) {
+                          chrome.tabs.executeScript(
+                            tabs[0].id,
+                            { file: "content_script.js" },
+                            function (result) {
+                              console.log(result);
+                            }
+                          );
+                        }
+                      );
+                    } else {
+                      alert(
+                        "You need to perform the initial search first by pressing the Verify Button"
+                      );
+                    }
                   }
                 } else {
                   alert("Please enter a valid last 4 digits of SSN");
@@ -1571,35 +1532,11 @@ function sendExclusionRecord() {
       let desc = `${err.toString()} in conversion() in Content Script`;
       insertFailLog(desc);
     }
-    // await html2pdf()
-    //   .set(opt)
-    //   .from(captureElement)
-    //   .toPdf()
-    //   .get("pdf")
-    //   .then(function (pdfObj) {
-    //     const perBlob = pdfObj.output("blob");
-    //     const blob = new Blob([perBlob], {
-    //       type: "application/pdf",
-    //     });
-    //     const oig = new File([blob], "oig.pdf", {
-    //       type: "application/pdf",
-    //     });
-    //     chrome.storage.local.get(["source"], function (result) {
-    //       let { source } = result;
-    //       source["oig"] = oig;
-    //       chrome.storage.local.set({
-    //         source: source,
-    //       });
-    //     });
-    //   });
   };
   try {
     let exclusionDiv = document.getElementById("ctl00_cpExclusions_pnlEmpty");
     if (exclusionDiv) {
       let record = exclusionDiv.getElementsByTagName("div")[0].innerText;
-      // postRecord(record, 'OIG', 'https://sam.gov/search/?index=ex&page=1&sort=-relevance&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BclassificationWrapper%5D%5Bclassification%5D=Individual');
-      // postRecord(record, 'OIG', 'https://www.sam.gov/SAM/pages/public/searchRecords/advancedPIRSearch.jsf');
-      // postRecord(record, 'OIG', 'https://www.sam.gov/SAM/pages/public/searchRecords/advancedPIRSearch.jsf');
       try {
         conversion();
         postRecord(
@@ -1614,9 +1551,6 @@ function sendExclusionRecord() {
       }
     } else {
       let record = document.getElementById("SP").innerText;
-      // postRecord(record, 'OIG', 'https://sam.gov/search/?index=ex&page=1&sort=-relevance&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BclassificationWrapper%5D%5Bclassification%5D=Individual');
-      // postRecord(record, 'OIG', 'https://www.sam.gov/SAM/pages/public/searchRecords/advancedPIRSearch.jsf');
-      // postRecord(record, 'OIG', 'https://www.sam.gov/SAM/pages/public/searchRecords/advancedPIRSearch.jsf');
       try {
         conversion();
         postRecord(
@@ -1646,6 +1580,9 @@ function sendExclusionRecord() {
 // 	});
 // }
 
+/**
+ * populate the sam form fields
+ */
 function populateNewSamFormFields(fields) {
   setTimeout(() => {
     try {
@@ -1694,11 +1631,6 @@ function populateNewSamFormFields(fields) {
             let record = "No Record Found!";
 
             let captureElement = document.getElementsByTagName("body")[0];
-            // take everything in the body and put it in a div
-            // let captureElement = document.createElement("div");
-            // captureElement.appendChild(body.cloneNode(true));
-            // body.appendChild(captureElement);
-
             let width = captureElement.scrollWidth;
             let height = captureElement.scrollHeight;
             const opt = {
@@ -1745,97 +1677,6 @@ function populateNewSamFormFields(fields) {
   }, 3000);
 }
 
-// /**
-//  * populate the sam website form fields
-//  * @param {array} fieldsArr | form fields array
-//  */
-
-// function populateSamFormFields(fieldsArr) {
-// 	try {
-// 		let formDiv = document.getElementById('tPIRSF');
-// 		formDiv.style.display = 'block';
-// 		let formCheck = document.getElementById('advPIRSearch:PIRSF:0');
-// 		formCheck.checked = 'checked';
-// 		let classificationSelect = document.getElementById('advPIRSearch:inputPIRSFClassification');
-// 		classificationSelect.value = 'IND';
-// 		fieldsArr.forEach((field) => {
-// 			let fieldName = Object.keys(field)[0];
-// 			let fieldValue = Object.values(field)[0];
-// 			let fieldInp;
-// 			switch (fieldName) {
-// 				case 'fname':
-// 					fieldInp = document.getElementById('advPIRSearch:inputExcpPIRSFIndFirstName');
-// 					fieldInp.disabled = false;
-// 					fieldInp.value = fieldValue;
-// 					break;
-// 				case 'lname':
-// 					fieldInp = document.getElementById('advPIRSearch:inputExcpPIRSFIndLastName');
-// 					fieldInp.disabled = false;
-// 					fieldInp.value = fieldValue;
-// 					break;
-// 				case 'city':
-// 					document.getElementById('advPIRSearch:inputPIRSFCity').value = fieldValue;
-// 					break;
-// 				case 'state':
-// 					fieldValue = getStateAbriviaiton(fieldValue);
-// 					document.getElementById('advPIRSearch:inputPIRSFStateTxt').value = fieldValue;
-// 					break;
-// 				case 'zip':
-// 					document.getElementById('advPIRSearch:inputPIRSFZip').value = fieldValue;
-// 					break;
-// 				case 'mname':
-// 					fieldInp = document.getElementById('advPIRSearch:inputExcpPIRSFIndMidName');
-// 					fieldInp.disabled = false;
-// 					fieldInp.value = fieldValue;
-// 					break;
-// 				default:
-// 					return false;
-// 			}
-// 		});
-
-// 		let submitBtn = document.getElementById('advPIRSearch:PIRAdvSearchButton');
-// 		submitBtn.click();
-// 	} catch (err) {
-// 		console.log(err.toString())
-// 		let desc = `${err.toString()} in populateSamFormFields() in Content Script`
-// 		insertFailLog(desc)
-// 	}
-
-// }
-
-// /**
-//  * post the result from sam website to jazz hr
-//  */
-
-// function postSamRecord() {
-// 	try {
-// 		let record = document.getElementsByClassName('noResultsFontSize')[0];
-// 		if (!record) {
-// 			record = '';
-// 			let recordTable = document.getElementById('search_results');
-// 			let recordElements = recordTable
-// 				.getElementsByTagName('li')[0]
-// 				.getElementsByTagName('table')[1]
-// 				.getElementsByTagName('table')[2]
-// 				.getElementsByTagName('td');
-// 			for (let i = 0; i < recordElements.length; i++) {
-// 				let resultsArr = recordElements[i].getElementsByTagName('div');
-// 				let resultsHeading = resultsArr[0].innerText;
-// 				let resultsBody = resultsArr[1].innerText;
-// 				record = `${record} ${resultsHeading} ${resultsBody}`;
-// 			}
-// 		} else {
-// 			record = record.innerText;
-// 		}
-// 		postRecord(record, 'SAM', 'https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm');
-// 	} catch (err) {
-// 		console.log(err.toString())
-// 		let desc = `${err.toString()} in postSamRecord() in Content Script`
-// 		insertFailLog(desc)
-// 	}
-
-// }
-
 /**
  * This function sends message to background
  * to post record retreived from the verification website
@@ -1846,54 +1687,6 @@ function populateNewSamFormFields(fields) {
 
 function postRecord(record, siteName, redirect) {
   window.location.href = redirect;
-
-  // let today = new Date();
-  // let dd = String(today.getDate()).padStart(2, "0");
-  // let mm = String(today.getMonth() + 1).padStart(2, "0"); //January is 0!
-  // let yyyy = today.getFullYear();
-  // today = mm + "-" + dd + "-" + yyyy;
-  // chrome.storage.sync.get(
-  //   ["firstName", "lastName", "prospectEmail"],
-  //   function (result) {
-  //     try {
-  //       let { firstName, lastName, prospectEmail } = result;
-  //       if (prospectEmail) {
-  //         chrome.runtime.sendMessage(
-  //           {
-  //             baseUrl,
-  //             bearerToken,
-  //             record,
-  //             prospectEmail,
-  //             type: "postRecord",
-  //             firstName,
-  //             lastName,
-  //             siteName,
-  //             currentDate: today,
-  //           },
-  //           function (response) {
-  //             if (response.fail || response) {
-  //               if (!redirect) {
-  //                 chrome.storage.sync.remove("fields");
-  //                 chrome.storage.sync.remove("source", (result) => {
-  //                   console.log(result);
-  //                   window.close();
-  //                 });
-  //               }
-  //               window.location.href = redirect;
-  //             } else {
-  //               vNotify.error({ text: "Record not posted" });
-  //             }
-  //           }
-  //         );
-  //       }
-  //     } catch (err) {
-  //       console.log("erro");
-  //       console.log(err.toString());
-  //       let desc = `${err.toString()} in postSamRecord() in Content Script`;
-  //       insertFailLog(desc);
-  //     }
-  //   }
-  // );
 }
 /**
  * This function sends message to background to send the data to the server
@@ -1912,6 +1705,7 @@ function postData() {
               },
               function () {
                 console.log("id set");
+                return true;
               }
             );
           }
@@ -1935,16 +1729,6 @@ async function postDocument(doc) {
       chrome.runtime.sendMessage(
         { baseUrl, bearerToken, doc, id, type: "postDoc" },
         function (response) {
-          // if (response?.data?.id) {
-          //   chrome.storage.sync.set(
-          //     {
-          //       id: response.data.id,
-          //     },
-          //     function () {
-          //       console.log("id set");
-          //     }
-          //   );
-          // }
           console.log("response: ", response);
         }
       );
@@ -1963,30 +1747,11 @@ async function postDocument(doc) {
  */
 
 function fetchAhsRequestDetails(data) {
-  // chrome.runtime.sendMessage(
-  //   { baseUrl, bearerToken, prospectEmail, type: "fetchAhsRecord" },
-  //   function (response) {
-  //     try {
-  //       let { data } = response;
   if (data) {
-    // chrome.storage.sync.set({
-    //   ahsData: data,
-    //   prospectEmail,
-    //   name,
-    // });
-    // let { created_at, updated_at } = data;
     let fromDate = formatAhsDate(data.created_at);
     let toDate = formatAhsDate(new Date());
     populateAhsDate(fromDate, toDate);
   }
-
-  //     } catch (err) {
-  //       console.log(err.toString());
-  //       let desc = `${err.toString()} in fetchAhsRequestDetails() in Content Script`;
-  //       insertFailLog(desc);
-  //     }
-  //   }
-  // );
 }
 
 /**
@@ -1996,7 +1761,6 @@ function fetchAhsRequestDetails(data) {
 
 function formatAhsDate(datetime) {
   datetime = new Date(datetime).toISOString();
-  console.log("herer date timee", datetime);
   let field = datetime.split("T")[0];
   field = field.split("-");
   // 06/11/1992
@@ -2017,29 +1781,12 @@ function populateAhsDate(from, to) {
     try {
       let { ahsData } = result;
       if (ahsData) {
-        // chrome.runtime.sendMessage(
-        //   { baseUrl, bearerToken, prospectEmail, type: "fetchAhsStatus" },
-        //   function (response) {
-        //     try {
-        //       let { data } = response;
-        //       if (data) {
-        //         chrome.storage.sync.set({
-        //           verificationStatus: data,
-        //         });
         let fromInp = document.getElementsByName("from_dt")[0];
         fromInp.value = from;
         let toInp = document.getElementsByName("to_dt")[0];
         toInp.value = to;
         let submitBtn = document.getElementsByName("submit")[0];
         submitBtn.click();
-        //       }
-        //     } catch (err) {
-        //       console.log(err.toString());
-        //       let desc = `${err.toString()} in populateAhsDate() at chrome.runtime.sendMessage({ baseUrl, bearerToken, prospectEmail, type: 'fetchAhsStatus' } in Content Script`;
-        //       insertFailLog(desc);
-        //     }
-        //   }
-        // );
       }
     } catch (err) {
       console.log(err.toString());
@@ -2056,39 +1803,24 @@ function populateAhsDate(from, to) {
 function searchAhsRecord() {
   chrome.storage.sync.get(["ahsData"], function (result) {
     try {
-      let { fname, lname } = result;
-      // let { ahs_adult, ahs_child } = verificationStatus;
-      // if (ahs_adult && ahs_child) {
-      //   // vNotify.success({ text: "Record already fetched" });
-      //   setTimeout(() => {
-      //     chrome.storage.sync.remove("fields");
-      //     chrome.storage.sync.remove("source", (result) => {
-      //       window.close();
-      //     });
-      //   }, 3000);
-      //   return;
-      // }
+      let { fname, lname, subFname, subLname } = result.ahsData;
       if (fname) {
-        // select the column Submitted by
-        let col = document.getElementsByClassName("col-md-2")[0];
+        console.log("went in fname");
         let nameRows = document.querySelectorAll("[nowrap]");
-        let nameMatched = false;
         let recordFound = false;
         let firstName = fname;
         let lastName = lname;
-        let subFname = "Moe";
-        let subLname = "B";
-        // document.querySelectorAll("[nowrap]")[0].parentNode.cells[2].innerText
+        let subFirstname = subFname;
+        let subLastname = subLname;
         let name = `${lastName}, ${firstName}`;
         let recordVerify = { child: false, adult: false };
         for (let i = 0; i < nameRows.length; i++) {
           if (
             nameRows[i].innerText.includes(name) &&
             nameRows[i].parentNode.cells[2].innerText.includes(
-              `${subFname} ${subLname}`
+              `${subFirstname} ${subLastname}`
             )
           ) {
-            nameMatched = true; //start work from here on
             chrome.storage.sync.set({
               firstName,
               lastName,
@@ -2098,7 +1830,7 @@ function searchAhsRecord() {
             recordsRow.length === 0
               ? (recordFound = false)
               : (recordFound = true);
-            if (recordsRow.length) {
+            if (recordsRow.length > 0) {
               for (let i = 0; i < recordsRow.length; i++) {
                 const urlParams = new URLSearchParams(recordsRow[i].href);
                 const recordType = urlParams.get("RegistryRecordTypeID");
@@ -2113,34 +1845,31 @@ function searchAhsRecord() {
                 ahsRecord: recordVerify,
               });
               if (recordsRow.length === 2) {
-                if (ahs_adult === 0) {
+                if (recordVerify.adult === true) {
                   window.location.href = recordsRow[0].href;
-                } else if (ahs_child === 0) {
-                  window.location.href = recordsRow[1].href;
                 }
               } else {
                 const urlParams = new URLSearchParams(recordsRow[0].href);
                 const recordType = urlParams.get("RegistryRecordTypeID");
-                if (recordType === "6" && ahs_adult === 0) {
+                if (recordType === "6") {
                   window.location.href = recordsRow[0].href;
-                } else if (recordType === "7" && ahs_child == 0) {
-                  window.location.href = recordsRow[0].href;
+                } else if (recordType === "7") {
+                  window.location.href = recordsRow[1].href;
                 } else {
-                  // vNotify.error({ text: "One Record is under process" });
-                  alert("One Record is under process");
-                  setTimeout(() => {
-                    chrome.storage.sync.remove("ahsData");
-                    window.close();
-                  }, 5000);
                 }
+                vNotify.error({ text: "One Record is under process" });
+                alert("One Record is under process");
+                setTimeout(() => {
+                  window.close();
+                }, 5000);
               }
+              break;
             }
-            break;
           }
         }
         if (!recordFound) {
-          // vNotify.error({ text: "Record not found" });
-          alert("Record not found");
+          vNotify.error({ text: "No record found" });
+          alert("No record found");
           setTimeout(() => {
             chrome.storage.sync.remove("ahsData");
             window.close();
@@ -2156,44 +1885,57 @@ function searchAhsRecord() {
 }
 
 /**
- * remove html tags from string
- * @param {string} str
- */
-
-function strip_html_tags(str) {
-  if (str === null || str === "") return false;
-  else str = str.toString();
-  return str.replace(/<[^>]*>/g, "");
-}
-
-/**
  * this function sends message to background to post the ahs adult record of candidate
  */
 
 function postAhsAdultRecord() {
-  chrome.storage.sync.get(["ahsRecord"], function (result) {
+  chrome.storage.sync.get(["ahsRecord"], async function (result) {
     try {
       let { child } = result.ahsRecord;
       let { search } = window.location;
       const urlParams = new URLSearchParams(search);
       let requestId = urlParams.get("requestID");
       let redirectUrl = `https://www.ahsnet.ahs.state.vt.us/ABC/show_clears.cfm?requestID=${requestId}&RegistryRecordTypeID=7`;
-      let recordDiv = document.getElementsByTagName("p");
-      if (recordDiv) {
-        let record = "";
-        for (let i = 1; i < recordDiv.length; i++) {
-          record =
-            record +
-            strip_html_tags(recordDiv[i].innerHTML.replace(/\&nbsp;/g, ""));
-          if (i == 1) {
-            record = record + "\n";
-          }
-        }
-        if (child) {
-          postRecord(record, "AHS_Adult", redirectUrl);
-        } else {
-          postRecord(record, "AHS_Adult", false);
-        }
+
+      let captureElement = document.getElementsByTagName("body")[0];
+
+      const opt = {
+        margin: 0,
+        filename: "ahs_adult.pdf",
+        image: { type: "jpeg", quality: 1 },
+        html2canvas: { scale: 2 },
+        enableLinks: false,
+        jsPDF: {
+          orientation: "p",
+          unit: "mm",
+          format: "tabloid",
+          putOnlyUsedFonts: true,
+          floatPrecision: 16, // or "smart", default is 16
+        },
+        html2canvas: {
+          // dpi: 300,
+          // letterRendering: true,
+          useCORS: true,
+        },
+      };
+      await html2pdf().from(captureElement).set(opt).save();
+
+      await html2pdf()
+        .from(captureElement)
+        .set(opt)
+        .outputPdf()
+        .then(function (pdf) {
+          let doc = { ahs_adult: btoa(pdf) };
+          postDocument(doc);
+        });
+      if (child) {
+        window.location.href = redirectUrl;
+      } else {
+        setTimeout(() => {
+          chrome.storage.sync.remove("ahsData");
+          chrome.storage.sync.remove("ahsRecord");
+          window.close();
+        }, 3000);
       }
     } catch (err) {
       console.log(err.toString());
@@ -2207,29 +1949,85 @@ function postAhsAdultRecord() {
  * this function sends message to background to post the ahs child record of candidate
  */
 
-function postAhsChildRecord() {
+async function postAhsChildRecord() {
   try {
-    let recordDiv = document.getElementsByTagName("p");
-    if (recordDiv) {
-      let record = "";
-      for (let i = 1; i < recordDiv.length; i++) {
-        record =
-          record +
-          strip_html_tags(recordDiv[i].innerHTML.replace(/\&nbsp;/g, ""));
-        if (i == 1) {
-          record = record + "\n";
-        }
-      }
-      postRecord(record, "AHS_Child");
-      setTimeout(() => {
-        chrome.storage.sync.remove("fields");
-        chrome.storage.sync.remove("source");
-        window.close();
-      }, 2000);
-    }
+    let captureElement = document.getElementsByTagName("body")[0];
+
+    const opt = {
+      margin: 0,
+      filename: "ahs_child.pdf",
+      image: { type: "jpeg", quality: 1 },
+      html2canvas: { scale: 2 },
+      enableLinks: false,
+      jsPDF: {
+        orientation: "p",
+        unit: "mm",
+        format: "tabloid",
+        putOnlyUsedFonts: true,
+        floatPrecision: 16, // or "smart", default is 16
+      },
+      html2canvas: {
+        // dpi: 300,
+        // letterRendering: true,
+        useCORS: true,
+      },
+    };
+    await html2pdf().from(captureElement).set(opt).save();
+
+    await html2pdf()
+      .from(captureElement)
+      .set(opt)
+      .outputPdf()
+      .then(function (pdf) {
+        let doc = { ahs_child: btoa(pdf) };
+        postDocument(doc);
+        setTimeout(() => {
+          chrome.storage.sync.remove("ahsRecord");
+          chrome.storage.sync.remove("ahsData");
+          window.close();
+        }, 3000);
+      });
   } catch (err) {
     console.log(err.toString());
     let desc = `${err.toString()} in postAhsChildRecord() in Content Script`;
     insertFailLog(desc);
   }
 }
+
+/**
+ * this function performs the sign in process to otes.okta.com
+ * */
+
+const signInOkta = () => {
+  let inputUsername = document.getElementById("idp-discovery-username");
+  if (inputUsername) {
+    inputUsername.value = "m@tlcnursing.com";
+  }
+  let signInUsername = document.getElementById("okta-signin-username");
+  if (signInUsername) {
+    signInUsername.value = "m@tlcnursing.com";
+  }
+  let inputPassword = document.getElementById("idp-discovery-password");
+  if (inputPassword) {
+    inputPassword.value = "Williston1550!";
+  }
+  let signInPassword = document.getElementById("okta-signin-password");
+  if (signInPassword) {
+    signInPassword.value = "Williston1550!";
+  }
+  let inputSubmit = document.getElementById("idp-discovery-submit");
+  if (inputSubmit) {
+    inputSubmit.click();
+  }
+  let singInSubmit = document.getElementById("okta-signin-submit");
+  if (singInSubmit) {
+    singInSubmit.submit();
+  }
+  if (!signInPassword) {
+    let form = document.getElementById("form18");
+    if (form) {
+      form.submit();
+      console.log("submitted form");
+    }
+  }
+};
