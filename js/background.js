@@ -26,72 +26,72 @@ try {
 
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   let {
-    prospectEmail,
+    // prospectEmail,
     baseUrl,
     bearerToken,
     type,
-    record,
-    firstName,
-    lastName,
-    siteName,
-    currentDate,
+    // record,
+    // firstName,
+    // lastName,
+    // siteName,
+    // currentDate,
     data,
     doc,
     id,
   } = request;
   switch (type) {
-    case "fetchCandidateDetails": {
-      fetchCandidateDetails(baseUrl, bearerToken, prospectEmail).then(
-        (response) => {
-          if (response) {
-            let { fail, data } = response;
-            if (data) {
-              let responseArr = data;
-              let fieldsArr = [];
-              responseArr.forEach((field) => {
-                let data = {};
-                data[field.name] = field.value;
-                fieldsArr.push(data);
-              });
-              sendResponse({
-                fields: fieldsArr,
-              });
-            } else if (fail) {
-              sendResponse(response);
-            }
-          } else sendResponse();
-        }
-      );
-      return true;
-    }
-    case "postRecord": {
-      postRecord(
-        baseUrl,
-        bearerToken,
-        record,
-        prospectEmail,
-        firstName,
-        lastName,
-        siteName,
-        currentDate
-      ).then((response) => {
-        if (response.fail) {
-          sendResponse(response);
-        } else {
-          let log = {
-            description: `${siteName} verification done on ${
-              prospectEmail.split("@")[0]
-            }`,
-          };
+    // case "fetchCandidateDetails": {
+    //   fetchCandidateDetails(baseUrl, bearerToken, prospectEmail).then(
+    //     (response) => {
+    //       if (response) {
+    //         let { fail, data } = response;
+    //         if (data) {
+    //           let responseArr = data;
+    //           let fieldsArr = [];
+    //           responseArr.forEach((field) => {
+    //             let data = {};
+    //             data[field.name] = field.value;
+    //             fieldsArr.push(data);
+    //           });
+    //           sendResponse({
+    //             fields: fieldsArr,
+    //           });
+    //         } else if (fail) {
+    //           sendResponse(response);
+    //         }
+    //       } else sendResponse();
+    //     }
+    //   );
+    //   return true;
+    // }
+    // case "postRecord": {
+    //   navigate(
+    //     baseUrl,
+    //     bearerToken,
+    //     record,
+    //     prospectEmail,
+    //     firstName,
+    //     lastName,
+    //     siteName,
+    //     currentDate
+    //   ).then((response) => {
+    //     if (response.fail) {
+    //       sendResponse(response);
+    //     } else {
+    //       let log = {
+    //         description: `${siteName} verification done on ${
+    //           prospectEmail.split("@")[0]
+    //         }`,
+    //       };
 
-          insertLog(log, baseUrl, bearerToken);
-          sendResponse({
-            sent: true,
-          });
-        }
-      });
-      return true;
-    }
+    //       insertLog(log, baseUrl, bearerToken);
+    //       sendResponse({
+    //         sent: true,
+    //       });
+    //     }
+    //   });
+    //   return true;
+    // }
     case "postData": {
       sendData(baseUrl, bearerToken, data).then((response) => {
         sendResponse(response);
@@ -106,122 +106,122 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       });
       return true;
     }
-    case "fetchAhsRecord": {
-      fetchAhsRecord(baseUrl, bearerToken, prospectEmail).then((response) => {
-        sendResponse(response);
-      });
-      return true;
-    }
-    case "fetchAhsStatus": {
-      fetchVerficationStatus(baseUrl, bearerToken, prospectEmail).then(
-        (response) => {
-          sendResponse(response);
-        }
-      );
-      return true;
-    }
-    case "insertLog": {
-      let log = {
-        ...request.payload,
-      };
-      chrome.storage.sync.get(["baseUrl", "bearerToken"], function (result) {
-        if (result.baseUrl) {
-          baseUrl = result.baseUrl.replace(/\/$/, "");
-          bearerToken = result.bearerToken;
-          insertLog(log, baseUrl, bearerToken);
-          // insertLog(log, 'https://jazzhr.gotomy.dev', '379|qmf7erBlPpZYH7oasaotCZb8oAXo1dgoCUcWTeia')
-        }
-      });
+    // case "fetchAhsRecord": {
+    //   fetchAhsRecord(baseUrl, bearerToken, prospectEmail).then((response) => {
+    //     sendResponse(response);
+    //   });
+    //   return true;
+    // }
+    // case "fetchAhsStatus": {
+    //   fetchVerficationStatus(baseUrl, bearerToken, prospectEmail).then(
+    //     (response) => {
+    //       sendResponse(response);
+    //     }
+    //   );
+    //   return true;
+    // }
+    // case "insertLog": {
+    //   let log = {
+    //     ...request.payload,
+    //   };
+    //   chrome.storage.sync.get(["baseUrl", "bearerToken"], function (result) {
+    //     if (result.baseUrl) {
+    //       baseUrl = result.baseUrl.replace(/\/$/, "");
+    //       bearerToken = result.bearerToken;
+    //       insertLog(log, baseUrl, bearerToken);
+    //       // insertLog(log, 'https://jazzhr.gotomy.dev', '379|qmf7erBlPpZYH7oasaotCZb8oAXo1dgoCUcWTeia')
+    //     }
+    //   });
 
-      return true;
-    }
+    //   return true;
+    // }
   }
 });
 
-/**
- * This function fetches the candidates details
- * the details are form fields that are to be populated in the verification websites
- * @param {string} baseUrl | base url of the api
- * @param {string} bearerToken | token for the authorization of user
- * @param {string} prospectEmail | the applicant id
- */
+// /**
+//  * This function fetches the candidates details
+//  * the details are form fields that are to be populated in the verification websites
+//  * @param {string} baseUrl | base url of the api
+//  * @param {string} bearerToken | token for the authorization of user
+//  * @param {string} prospectEmail | the applicant id
+//  */
 
-async function fetchCandidateDetails(baseUrl, bearerToken, prospectEmail) {
-  try {
-    var myHeaders = new Headers();
-    myHeaders.append("Authorization", `Bearer ${bearerToken}`);
-    myHeaders.append("Accept", "application/json");
-    var requestOptions = {
-      method: "GET",
-      redirect: "follow",
-      headers: myHeaders,
-    };
+// async function fetchCandidateDetails(baseUrl, bearerToken, prospectEmail) {
+//   try {
+//     var myHeaders = new Headers();
+//     myHeaders.append("Authorization", `Bearer ${bearerToken}`);
+//     myHeaders.append("Accept", "application/json");
+//     var requestOptions = {
+//       method: "GET",
+//       redirect: "follow",
+//       headers: myHeaders,
+//     };
 
-    let response = await fetch(
-      `${baseUrl}/api/v1/documents/${prospectEmail}`,
-      requestOptions
-    );
-    let responseBody = await response.json();
-    return responseBody;
-  } catch (error) {
-    return undefined;
-  }
-}
+//     let response = await fetch(
+//       `${baseUrl}/api/v1/documents/${prospectEmail}`,
+//       requestOptions
+//     );
+//     let responseBody = await response.json();
+//     return responseBody;
+//   } catch (error) {
+//     return undefined;
+//   }
+// }
 
-/**
- * This function posts record to documents end point which is then shown in jazz hr
- * documnents tab in candidate's profile
- * @param {string} baseUrl | base url of the api
- * @param {string} bearerToken | token for the authorization of user
- * @param {string} record | record to be posted
- * @param {string} prospectEmail | the applicant id
- * @param {string} firstName | first name of candidate
- * @param {string} lastName | last name of candidate
- * @param {string} siteName | the name of the site where record was verified
- */
+// /**
+//  * This function posts record to documents end point which is then shown in jazz hr
+//  * documnents tab in candidate's profile
+//  * @param {string} baseUrl | base url of the api
+//  * @param {string} bearerToken | token for the authorization of user
+//  * @param {string} record | record to be posted
+//  * @param {string} prospectEmail | the applicant id
+//  * @param {string} firstName | first name of candidate
+//  * @param {string} lastName | last name of candidate
+//  * @param {string} siteName | the name of the site where record was verified
+//  */
 
-async function postRecord(
-  baseUrl,
-  bearerToken,
-  record,
-  prospectEmail,
-  firstName,
-  lastName,
-  siteName,
-  currentDate
-) {
-  try {
-    var myHeaders = new Headers();
-    myHeaders.append("Authorization", `Bearer ${bearerToken}`);
-    myHeaders.append("Accept", "application/json");
+// async function navigate(
+//   baseUrl,
+//   bearerToken,
+//   record,
+//   prospectEmail,
+//   firstName,
+//   lastName,
+//   siteName,
+//   currentDate
+// ) {
+//   try {
+//     var myHeaders = new Headers();
+//     myHeaders.append("Authorization", `Bearer ${bearerToken}`);
+//     myHeaders.append("Accept", "application/json");
 
-    var formdata = new FormData();
+//     var formdata = new FormData();
 
-    formdata.append("applicant_id", prospectEmail);
-    formdata.append(
-      "doc_name",
-      `${firstName}${lastName}${siteName}-${currentDate}.pdf`
-    );
-    formdata.append("doc_data", record);
-    formdata.append("site_name", siteName.toLowerCase());
+//     formdata.append("applicant_id", prospectEmail);
+//     formdata.append(
+//       "doc_name",
+//       `${firstName}${lastName}${siteName}-${currentDate}.pdf`
+//     );
+//     formdata.append("doc_data", record);
+//     formdata.append("site_name", siteName.toLowerCase());
 
-    var requestOptions = {
-      headers: myHeaders,
-      method: "POST",
-      body: formdata,
-      redirect: "follow",
-    };
+//     var requestOptions = {
+//       headers: myHeaders,
+//       method: "POST",
+//       body: formdata,
+//       redirect: "follow",
+//     };
 
-    let response = await fetch(
-      `${baseUrl}/api/v1/save-applicant-doc`,
-      requestOptions
-    );
-    let responseBody = response.json();
-    return responseBody;
-  } catch (error) {
-    console.log(error);
-  }
-}
+//     let response = await fetch(
+//       `${baseUrl}/api/v1/save-applicant-doc`,
+//       requestOptions
+//     );
+//     let responseBody = response.json();
+//     return responseBody;
+//   } catch (error) {
+//     console.log(error);
+//   }
+// }
 
 /**
  * This function posts record to documents end point which is then shown in admin panel
@@ -306,102 +306,102 @@ async function sendDocument(baseUrl, bearerToken, doc, id) {
   }
 }
 
-/**
- * this function fetches the ahs record of the candidate
- * return object having the from and to date range and name of candidate
- * @param {string} baseUrl
- * @param {string} bearerToken
- * @param {string} prospectEmail
- */
+// /**
+//  * this function fetches the ahs record of the candidate
+//  * return object having the from and to date range and name of candidate
+//  * @param {string} baseUrl
+//  * @param {string} bearerToken
+//  * @param {string} prospectEmail
+//  */
 
-async function fetchAhsRecord(baseUrl, bearerToken, prospectEmail) {
-  try {
-    var myHeaders = new Headers();
-    myHeaders.append("Authorization", `Bearer ${bearerToken}`);
-    myHeaders.append("Accept", "application/json");
-    var requestOptions = {
-      method: "GET",
-      redirect: "follow",
-      headers: myHeaders,
-    };
+// async function fetchAhsRecord(baseUrl, bearerToken, prospectEmail) {
+//   try {
+//     var myHeaders = new Headers();
+//     myHeaders.append("Authorization", `Bearer ${bearerToken}`);
+//     myHeaders.append("Accept", "application/json");
+//     var requestOptions = {
+//       method: "GET",
+//       redirect: "follow",
+//       headers: myHeaders,
+//     };
 
-    let response = await fetch(
-      `${baseUrl}/api/v1/site-validation-check/${prospectEmail}/ahs_child`,
-      requestOptions
-    );
-    let responseBody = await response.json();
-    return responseBody;
-  } catch (error) {
-    return undefined;
-  }
-}
+//     let response = await fetch(
+//       `${baseUrl}/api/v1/site-validation-check/${prospectEmail}/ahs_child`,
+//       requestOptions
+//     );
+//     let responseBody = await response.json();
+//     return responseBody;
+//   } catch (error) {
+//     return undefined;
+//   }
+// }
 
-/**
- * this function fetches the verification status of websites for the candidate
- * @param {string} baseUrl
- * @param {string} bearerToken
- * @param {string} prospectEmail
- */
+// /**
+//  * this function fetches the verification status of websites for the candidate
+//  * @param {string} baseUrl
+//  * @param {string} bearerToken
+//  * @param {string} prospectEmail
+//  */
 
-async function fetchVerficationStatus(baseUrl, bearerToken, prospectEmail) {
-  var myHeaders = new Headers();
-  myHeaders.append("Authorization", `Bearer ${bearerToken}`);
-  myHeaders.append("Accept", "application/json");
-  var requestOptions = {
-    method: "GET",
-    redirect: "follow",
-    headers: myHeaders,
-  };
-  try {
-    let response = await fetch(
-      `${baseUrl}/api/v1/site-validation-check/${prospectEmail}`,
-      requestOptions
-    );
-    let responseBody = await response.json();
-    return responseBody;
-  } catch (error) {
-    return undefined;
-  }
-}
+// async function fetchVerficationStatus(baseUrl, bearerToken, prospectEmail) {
+//   var myHeaders = new Headers();
+//   myHeaders.append("Authorization", `Bearer ${bearerToken}`);
+//   myHeaders.append("Accept", "application/json");
+//   var requestOptions = {
+//     method: "GET",
+//     redirect: "follow",
+//     headers: myHeaders,
+//   };
+//   try {
+//     let response = await fetch(
+//       `${baseUrl}/api/v1/site-validation-check/${prospectEmail}`,
+//       requestOptions
+//     );
+//     let responseBody = await response.json();
+//     return responseBody;
+//   } catch (error) {
+//     return undefined;
+//   }
+// }
 
-async function insertLog(data, endpoint, bearerToken) {
-  var myHeaders = new Headers();
-  myHeaders.append("Authorization", `Bearer ${bearerToken}`);
-  myHeaders.append("Accept", "application/json");
-  myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
-  let formData = new URLSearchParams();
+// async function insertLog(data, endpoint, bearerToken) {
+//   var myHeaders = new Headers();
+//   myHeaders.append("Authorization", `Bearer ${bearerToken}`);
+//   myHeaders.append("Accept", "application/json");
+//   myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
+//   let formData = new URLSearchParams();
 
-  formData.append("origin", "Verification Extension");
+//   formData.append("origin", "Verification Extension");
 
-  if (data.description) {
-    formData.append("description", data.description);
-  }
-  if (data.type) {
-    formData.append("type", data.type);
-  }
+//   if (data.description) {
+//     formData.append("description", data.description);
+//   }
+//   if (data.type) {
+//     formData.append("type", data.type);
+//   }
 
-  if (data.level) {
-    formData.append("level", data.level);
-  }
+//   if (data.level) {
+//     formData.append("level", data.level);
+//   }
 
-  if (data.result) {
-    formData.append("result", data.result);
-  }
+//   if (data.result) {
+//     formData.append("result", data.result);
+//   }
 
-  var requestOptions = {
-    method: "POST",
-    body: formData,
-    headers: myHeaders,
-  };
+//   var requestOptions = {
+//     method: "POST",
+//     body: formData,
+//     headers: myHeaders,
+//   };
 
-  fetch(`${endpoint}/api/v1/log`, requestOptions)
-    .then((res) => {
-      res.json();
-    })
-    .then((res) => {
-      console.log(res);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-}
+//   fetch(`${endpoint}/api/v1/log`, requestOptions)
+//     .then((res) => {
+//       res.json();
+//     })
+//     .then((res) => {
+//       console.log(res);
+//     })
+//     .catch((err) => {
+//       console.log(err);
+//     });
+// }

@@ -5,19 +5,19 @@ window.onload = function () {
   fetchApiKey();
 };
 
-function insertFailLog(description) {
-  // chrome.runtime.sendMessage(
-  //   {
-  //     type: "insertLog",
-  //     payload: {
-  //       description: description,
-  //       result: "failure",
-  //       level: "error",
-  //     },
-  //   },
-  //   function (response) {}
-  // );
-}
+// function insertFailLog(description) {
+// chrome.runtime.sendMessage(
+//   {
+//     type: "insertLog",
+//     payload: {
+//       description: description,
+//       result: "failure",
+//       level: "error",
+//     },
+//   },
+//   function (response) {}
+// );
+// }
 
 // window.onerror = function (error, url, line) {
 //   if (url.includes("content-script.js") || url.includes("background.js")) {
@@ -43,9 +43,8 @@ function fetchApiKey() {
         // window.addEventListener("load", init(), false);
       }
     } catch (err) {
-      console.log(err.toString());
       let desc = `${err.toString()} in fetchApiKey() in Content Script`;
-      insertFailLog(desc);
+      console.log(desc);
     }
   });
 }
@@ -74,12 +73,34 @@ function init() {
     },
     false
   );
+  window.addEventListener("popstate", function () {
+    console.log("popstate url:", window.location.href);
+    // let url = window.location.href;
+  });
+  // let observer = new MutationObserver(function (mutations) {
+  //   mutations.forEach(function (mutation) {
+  //     if (mutation.type === "attributes") {
+  //       console.log("mutation: ", mutation);
+  //       // signInOkta();
+  //     }
+  //   });
+  // });
+  // let config = { attributes: true, childList: true, subtree: true };
+  // observer.observe(document.body, config);
+
   try {
     let { pathname, search } = window.location;
     console.log(`pathname`, pathname);
-    if (pathname.includes("/signin/refresh-auth-state")) {
-      console.log("came in refresh-auth-state");
-      signInOkta();
+    if (
+      pathname.includes("/signin/refresh-auth-state") ||
+      window.location.href === "https://otes.okta.com/"
+    ) {
+      chrome.storage.sync.get(["source"], function (result) {
+        if (result && result.source) {
+          console.log("came in refresh-auth-state");
+          signInOkta();
+        }
+      });
     }
     switch (pathname) {
       case "/DPS/criminalrecords/subscriber/": {
@@ -314,10 +335,8 @@ function init() {
           if (result && result.source) {
             let interval = setInterval(() => {
               if (document.getElementById("primary-content")) {
-                let record =
-                  document.getElementById("primary-content").innerText;
                 // postRecord(record, 'SAM', 'https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm');
-                postRecord(record, "SAM", false);
+                // navigate(record, "SAM", false);
                 clearInterval(interval);
               }
             }, 1000);
@@ -365,11 +384,7 @@ function init() {
                   .then(function (pdf) {
                     let doc = { google: btoa(pdf) };
                     postDocument(doc);
-                    postRecord(
-                      "",
-                      "clientconnect",
-                      "https://clientconnect.otes.com/login"
-                    );
+                    navigate("https://clientconnect.otes.com/login");
                   });
               } catch (err) {
                 console.log("err:", err);
@@ -399,8 +414,7 @@ function init() {
         });
         break;
       }
-      case "/signin" ||
-        "/signin/refresh-auth-state/00N0Mg0TFvHYdHibetbEW4A77XpXMwMF_OOU6gm705": {
+      case "/signin" || "/signin/refresh-auth-state/": {
         chrome.storage.sync.get(["source"], function (result) {
           if (result && result.source) {
             let inputUsername = document.getElementById("okta-signin-username");
@@ -443,9 +457,8 @@ function init() {
         return false;
     }
   } catch (err) {
-    console.log(err.toString());
     let desc = `${err.toString()} in init() in Content Script`;
-    insertFailLog(desc);
+    console.log(desc);
   }
   // }
 }
@@ -467,7 +480,7 @@ function populateLoginFields(email, password) {
   } catch (err) {
     console.log("errrr: ", err.toString());
     let desc = `${err.toString()} in populateLoginFields() in Content Script`;
-    insertFailLog(desc);
+    console.log(desc);
   }
 }
 
@@ -488,9 +501,8 @@ function populateArgreementFields() {
     vpa.checked = true;
     submitBtn.click();
   } catch (err) {
-    console.log(err.toString());
     let desc = `${err.toString()} in populateArgreementFields() in Content Script`;
-    insertFailLog(desc);
+    console.log(desc);
   }
 }
 
@@ -527,9 +539,8 @@ function fetchCandidateData() {
         // );
       }
     } catch (err) {
-      console.log(err.toString());
       let desc = `${err.toString()} in fetchCandidateData() in Content Script`;
-      insertFailLog(desc);
+      console.log(desc);
     }
   });
 }
@@ -598,9 +609,8 @@ function populateCandidateData(fields) {
 
     document.getElementsByName("purpose")[0].value = "E";
   } catch (err) {
-    console.log(err.toString());
     let desc = `${err.toString()} in populateCandidateData() in Content Script`;
-    insertFailLog(desc);
+    console.log(desc);
   }
 }
 
@@ -611,7 +621,6 @@ function populateCandidateData(fields) {
 
 async function getConvictionRecord() {
   try {
-    let record = document.getElementsByTagName("pre")[0].innerHTML;
     let captureElement = document.getElementsByTagName("body")[0];
     const opt = {
       margin: 0,
@@ -642,17 +651,16 @@ async function getConvictionRecord() {
           let doc = { vcic: btoa(pdf) };
 
           postDocument(doc);
-          postRecord(record, "VCIC", "https://exclusions.oig.hhs.gov/");
+          navigate("https://exclusions.oig.hhs.gov/");
         });
     } catch (err) {
       console.log("error: ", err);
       let desc = `${err.toString()} in getConvictionRecord() in Content Script`;
-      insertFailLog(desc);
+      console.log(desc);
     }
   } catch (err) {
-    console.log(err.toString());
     let desc = `${err.toString()} in getConvictionRecord() in Content Script`;
-    insertFailLog(desc);
+    console.log(desc);
   }
 }
 
@@ -676,9 +684,8 @@ function populateAhsLoginFields() {
         document.getElementsByName("login")[0].click();
       }
     } catch (err) {
-      console.log(err.toString());
       let desc = `${err.toString()} in getConvictionRecord() in Content Script`;
-      insertFailLog(desc);
+      console.log(desc);
     }
   });
 }
@@ -1006,9 +1013,8 @@ function populateAhsFormFields(fields) {
     let submitBtn = document.getElementById("subbut");
     submitBtn.click();
   } catch (err) {
-    console.log(err.toString());
     let desc = `${err.toString()} in populateAhsFormFields() in Content Script`;
-    insertFailLog(desc);
+    console.log(desc);
   }
 }
 /*
@@ -1018,6 +1024,7 @@ function submitVerificationForm() {
   try {
     let btnContainer = document.getElementsByClassName("verify")[0];
     let btn = document.createElement("button");
+
     let btnFetch = document.createElement("button");
     btn.innerText = "Verify";
     btnFetch.innerText = "Fetch AHS Status";
@@ -1028,7 +1035,7 @@ function submitVerificationForm() {
     btn.style.width = "132px";
     btnContainer.appendChild(btn);
     btnContainer.appendChild(btnFetch);
-    // btn.addEventListener("click", (e) => {
+
     document
       .getElementById("verifybtn")
       .addEventListener("click", function (e) {
@@ -1138,6 +1145,7 @@ function submitVerificationForm() {
                             ["source"],
                             function (result) {
                               console.log("saved data: ", result.source);
+                              clearVerificationFields();
                             }
                           );
                           postData();
@@ -1314,9 +1322,8 @@ function submitVerificationForm() {
       }
     });
   } catch (err) {
-    console.log(err.toString());
     let desc = `${err.toString()} in submitVerificationForm() in Content Script`;
-    insertFailLog(desc);
+    console.log(desc);
   }
 }
 
@@ -1404,9 +1411,8 @@ function fillApplicantForm() {
       }
     });
   } catch (err) {
-    console.log(err.toString());
     let desc = `${err.toString()} in fillApplicantForm() in Content Script`;
-    insertFailLog(desc);
+    console.log(desc);
   }
 }
 /**
@@ -1427,9 +1433,8 @@ function searchGoogle(fields) {
     searchInputGoogle.value = `${fields.fname} ${fields.lname} ${fields.state} ${fields.city} ${fields.keyword}`;
     document.getElementsByClassName("gNO89b")[0].click();
   } catch (err) {
-    console.log(err.toString());
     let desc = `${err.toString()} in searchGoogle() in Content Script`;
-    insertFailLog(desc);
+    console.log(desc);
   }
 }
 
@@ -1445,9 +1450,8 @@ function loginClientConnect() {
       document.getElementsByClassName("gNO89b")[0].click();
     }, 1000);
   } catch (err) {
-    console.log(err.toString());
     let desc = `${err.toString()} in loginClientConnect() in Content Script`;
-    insertFailLog(desc);
+    console.log(desc);
   }
 }
 
@@ -1461,11 +1465,7 @@ function populateExclusionLogin(fields) {
     if (
       document.getElementsByTagName("h2")[0].innerText === "Service Unavailable"
     ) {
-      postRecord(
-        "No response from Exclusion website",
-        "OIG",
-        "https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm"
-      );
+      navigate("https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm");
     } else {
       for (let key in fields) {
         if (fields.hasOwnProperty(key)) {
@@ -1484,9 +1484,8 @@ function populateExclusionLogin(fields) {
       submitBtn.click();
     }
   } catch (err) {
-    console.log(err.toString());
     let desc = `${err.toString()} in populateExclusionLogin() in Content Script`;
-    insertFailLog(desc);
+    console.log(desc);
   }
 }
 
@@ -1494,8 +1493,13 @@ function populateExclusionLogin(fields) {
  * post the exclusion record to the jazz hr
  */
 
-function sendExclusionRecord() {
-  const conversion = async () => {
+async function sendExclusionRecord() {
+  // const conversion = async () => {
+
+  // };
+  console.log("came in exclusion");
+
+  try {
     let captureElement = document.getElementsByTagName("body")[0];
 
     const opt = {
@@ -1518,54 +1522,35 @@ function sendExclusionRecord() {
       },
     };
     await html2pdf().from(captureElement).set(opt).save();
-    try {
-      await html2pdf()
-        .from(captureElement)
-        .set(opt)
-        .outputPdf()
-        .then(function (pdf) {
-          let doc = { oig: btoa(pdf) };
-          postDocument(doc);
-        });
-    } catch (err) {
-      console.log(err.toString());
-      let desc = `${err.toString()} in conversion() in Content Script`;
-      insertFailLog(desc);
-    }
-  };
-  try {
-    let exclusionDiv = document.getElementById("ctl00_cpExclusions_pnlEmpty");
-    if (exclusionDiv) {
-      let record = exclusionDiv.getElementsByTagName("div")[0].innerText;
-      try {
-        conversion();
-        postRecord(
-          record,
-          "OIG",
-          "https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm"
-        );
-      } catch (err) {
-        console.log("err: ", err);
-        let desc = `${err.toString()} in sendExclusionRecord() in Content Script`;
-        insertFailLog(desc);
-      }
-    } else {
-      let record = document.getElementById("SP").innerText;
-      try {
-        conversion();
-        postRecord(
-          record,
-          "OIG",
-          "https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm"
-        );
-      } catch (err) {
-        console.log("err: ", err);
-      }
-    }
+    await html2pdf()
+      .from(captureElement)
+      .set(opt)
+      .outputPdf()
+      .then(function (pdf) {
+        let doc = { oig: btoa(pdf) };
+        postDocument(doc);
+      });
+    navigate("https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm");
+    // let exclusionDiv = document.getElementById("ctl00_cpExclusions_pnlEmpty");
+    // if (exclusionDiv) {
+    //   try {
+    //     conversion();
+    //     navigate("https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm");
+    //   } catch (err) {
+    //     let desc = `${err.toString()} in sendExclusionRecord() in Content Script`;
+    //     console.log(desc);
+    //   }
+    // } else {
+    //   try {
+    //     conversion();
+    //     navigate("https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm");
+    //   } catch (err) {
+    //     console.log("err: ", err);
+    //   }
+    // }
   } catch (err) {
-    console.log(err.toString());
     let desc = `${err.toString()} in sendExclusionRecord() in Content Script`;
-    insertFailLog(desc);
+    console.log(desc);
   }
 }
 
@@ -1628,8 +1613,6 @@ function populateNewSamFormFields(fields) {
               .children[0].getElementsByTagName("a")[0]
               .click();
           } else {
-            let record = "No Record Found!";
-
             let captureElement = document.getElementsByTagName("body")[0];
             let width = captureElement.scrollWidth;
             let height = captureElement.scrollHeight;
@@ -1663,16 +1646,15 @@ function populateNewSamFormFields(fields) {
               .then(function (pdf) {
                 let doc = { sam: btoa(pdf) };
                 postDocument(doc);
-                postRecord(record, "google", "https://www.google.com");
+                navigate("https://www.google.com");
               });
             return;
           }
         }, 2000);
       }, 3000);
     } catch (err) {
-      console.log(err.toString());
       let desc = `${err.toString()} in populateSamFormFields() in Content Script`;
-      insertFailLog(desc);
+      console.log(desc);
     }
   }, 3000);
 }
@@ -1685,7 +1667,7 @@ function populateNewSamFormFields(fields) {
  *  @param {string} redirect | site on to which redirect upon record successfully posted
  */
 
-function postRecord(record, siteName, redirect) {
+function navigate(redirect) {
   window.location.href = redirect;
 }
 /**
@@ -1712,10 +1694,8 @@ function postData() {
         }
       );
     } catch (err) {
-      console.log("error");
-      console.log(err.toString());
       let desc = `${err.toString()} in postData() in Content Script`;
-      insertFailLog(desc);
+      console.log(desc);
     }
   });
 }
@@ -1733,10 +1713,8 @@ async function postDocument(doc) {
         }
       );
     } catch (err) {
-      console.log("error");
-      console.log(err.toString());
       let desc = `${err.toString()} in postDocument() in Content Script`;
-      insertFailLog(desc);
+      console.log(desc);
     }
   });
 }
@@ -1789,9 +1767,8 @@ function populateAhsDate(from, to) {
         submitBtn.click();
       }
     } catch (err) {
-      console.log(err.toString());
       let desc = `${err.toString()} in populateAhsDate() in Content Script`;
-      insertFailLog(desc);
+      console.log(desc);
     }
   });
 }
@@ -1877,9 +1854,8 @@ function searchAhsRecord() {
         }
       }
     } catch (err) {
-      console.log(err.toString());
       let desc = `${err.toString()} in searchAhsRecord() in Content Script`;
-      insertFailLog(desc);
+      console.log(desc);
     }
   });
 }
@@ -1938,9 +1914,8 @@ function postAhsAdultRecord() {
         }, 3000);
       }
     } catch (err) {
-      console.log(err.toString());
       let desc = `${err.toString()} in postAhsAdultRecord() in Content Script`;
-      insertFailLog(desc);
+      console.log(desc);
     }
   });
 }
@@ -1988,9 +1963,8 @@ async function postAhsChildRecord() {
         }, 3000);
       });
   } catch (err) {
-    console.log(err.toString());
     let desc = `${err.toString()} in postAhsChildRecord() in Content Script`;
-    insertFailLog(desc);
+    console.log(desc);
   }
 }
 
@@ -1999,35 +1973,35 @@ async function postAhsChildRecord() {
  * */
 
 const signInOkta = () => {
-  let inputUsername = document.getElementById("idp-discovery-username");
-  if (inputUsername) {
-    inputUsername.value = "m@tlcnursing.com";
-  }
-  let signInUsername = document.getElementById("okta-signin-username");
-  if (signInUsername) {
-    signInUsername.value = "m@tlcnursing.com";
-  }
-  let inputPassword = document.getElementById("idp-discovery-password");
-  if (inputPassword) {
-    inputPassword.value = "Williston1550!";
-  }
-  let signInPassword = document.getElementById("okta-signin-password");
-  if (signInPassword) {
-    signInPassword.value = "Williston1550!";
-  }
-  let inputSubmit = document.getElementById("idp-discovery-submit");
-  if (inputSubmit) {
-    inputSubmit.click();
-  }
-  let singInSubmit = document.getElementById("okta-signin-submit");
-  if (singInSubmit) {
-    singInSubmit.submit();
-  }
-  if (!signInPassword) {
-    let form = document.getElementById("form18");
-    if (form) {
-      form.submit();
-      console.log("submitted form");
+  console.log("trying signin");
+
+  if (document.getElementById("okta-signin-submit")) {
+    if (document.getElementById("okta-signin-username")) {
+      document.getElementById("okta-signin-username").value =
+        "m@tlcnursing.com";
     }
+    if (document.getElementById("okta-signin-password")) {
+      document.getElementById("okta-signin-password").value = "Williston1550!";
+    }
+    document.getElementById("okta-signin-submit").click();
   }
+  if (document.getElementById("idp-discovery-submit")) {
+    if (document.getElementById("idp-discovery-username")) {
+      document.getElementById("idp-discovery-username").value =
+        "m@tlcnursing.com";
+    }
+    if (document.getElementById("idp-discovery-password")) {
+      document.getElementById("idp-discovery-password").value =
+        "Williston1550!";
+    }
+    document.getElementById("idp-discovery-submit").click();
+  }
+  if (document.getElementById("form18")) {
+    document.getElementById("form18").submit();
+  }
+
+  // let buttonBar = document.getElementsByClassName("o-form-button-bar")[0];
+  // if (buttonBar) {
+  //   buttonBar.click();
+  // }
 };
