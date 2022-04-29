@@ -1,30 +1,56 @@
+/**
+ * Generates the pdf of body content
+ * @param {string} fileName
+ * @param {string} orientation
+ * @param {string} unit
+ * @returns pdf file
+ */
+async function generateAndSavePdf(fileName, orientation, unit) {
+  try {
+    let captureElement = document.getElementsByTagName("body")[0];
+    const opt = {
+      margin: 0,
+      filename: `${fileName}`,
+      image: { type: "jpeg", quality: 1 },
+      html2canvas: { scale: 1 },
+      enableLinks: false,
+      jsPDF: {
+        orientation: `${orientation}`,
+        unit: `${unit}`,
+        format: "tabloid",
+        putOnlyUsedFonts: true,
+        floatPrecision: 16, // or "smart", default is 16
+      },
+      html2canvas: {
+        // dpi: 300,
+        // letterRendering: true,
+        useCORS: true,
+      },
+    };
+    await html2pdf().from(captureElement).set(opt).save();
+    const pdf = await html2pdf().from(captureElement).set(opt).outputPdf();
+    return pdf;
+  } catch (error) {
+    const desc = `${error.toString()} in generateAndSavePdf() in Content Script`;
+    console.log(desc);
+  }
+}
+
+/**
+ *
+ * @param {number} ms
+ * @returns promise
+ */
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 let baseUrl = "";
 let bearerToken = "";
 
 window.onload = function () {
   fetchApiKey();
 };
-
-// function insertFailLog(description) {
-// chrome.runtime.sendMessage(
-//   {
-//     type: "insertLog",
-//     payload: {
-//       description: description,
-//       result: "failure",
-//       level: "error",
-//     },
-//   },
-//   function (response) {}
-// );
-// }
-
-// window.onerror = function (error, url, line) {
-//   if (url.includes("content-script.js") || url.includes("background.js")) {
-//     let logDes = `Line: ${line} Error:${error} URL: ${url}`;
-//     insertFailLog(logDes);
-//   }
-// };
 
 /**
  * Fetch API Key from chrome storage
@@ -36,11 +62,9 @@ function fetchApiKey() {
         baseUrl = result.baseUrl.replace(/\/$/, "");
         bearerToken = result.bearerToken;
         init();
-        // window.addEventListener("load", init(), false);
       } else {
         vNotify.error({ text: "Set API Url" });
-        console.log("came in negative");
-        // window.addEventListener("load", init(), false);
+        alert("Set API Url");
       }
     } catch (err) {
       let desc = `${err.toString()} in fetchApiKey() in Content Script`;
@@ -48,16 +72,16 @@ function fetchApiKey() {
     }
   });
 }
-
+// Main Function
 /**
  * check for the pathname and follow up functions execution
  */
 // https://secure.vermont.gov/DPS/criminalrecords/subscriber/request.php
 function init() {
+  // below listener is for the case when user is on the React app of extension
   window.addEventListener(
     "hashchange",
     function () {
-      console.log("hash url:", window.location.href);
       let url = window.location.href;
       url = url.split("/");
       if (
@@ -73,28 +97,14 @@ function init() {
     },
     false
   );
-  window.addEventListener("popstate", function () {
-    console.log("popstate url:", window.location.href);
-    // let url = window.location.href;
-  });
-  // let observer = new MutationObserver(function (mutations) {
-  //   mutations.forEach(function (mutation) {
-  //     if (mutation.type === "attributes") {
-  //       console.log("mutation: ", mutation);
-  //       // signInOkta();
-  //     }
-  //   });
-  // });
-  // let config = { attributes: true, childList: true, subtree: true };
-  // observer.observe(document.body, config);
 
   try {
     let { pathname, search } = window.location;
     console.log(`pathname`, pathname);
-    if (
-      pathname.includes("/signin/refresh-auth-state") ||
-      window.location.href === "https://otes.okta.com/"
-    ) {
+
+    // the below pathname is seperated from switch case because this path has a token in it,
+    //      which keeps changing, hence we're using .includes() to target the static path
+    if (pathname.includes("/signin/refresh-auth-state")) {
       chrome.storage.sync.get(["source"], function (result) {
         if (result && result.source) {
           console.log("came in refresh-auth-state");
@@ -102,26 +112,13 @@ function init() {
         }
       });
     }
+
     switch (pathname) {
       case "/DPS/criminalrecords/subscriber/": {
         console.log("inside /DPS/criminalrecords/subscriber/");
         if (search.includes("email")) {
-          // const urlParams = new URLSearchParams(search);
-          // let prospectEmail = urlParams.get("email");
-          // chrome.storage.sync.set({
-          //   baseUrl,
-          //   bearerToken,
-          //   prospectEmail: prospectEmail,
-          //   source: "jazzhr",
-          // });
           email = "m@tlcnursing.com";
           password = "1550Williston!";
-          // chrome.storage.sync.set({
-          //   baseUrl,
-          //   bearerToken,
-          //   prospectEmail: prospectEmail,
-          //   source: "jazzhr",
-          // });
           populateLoginFields(email, password);
         }
         break;
@@ -294,18 +291,14 @@ function init() {
       case "/SearchResults.aspx": {
         chrome.storage.sync.get(["source"], function (result) {
           if (result && result.source) {
-            // window.location.href = 'https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm'
             sendExclusionRecord();
           }
         });
 
         break;
       }
-
       //sam search
-
       case "/search/": {
-        // get button with class name "close-btn ng-tns-c66-1 ng-star-inserted" and click it
         let closeBtn = document.querySelector(
           "button.close-btn.ng-tns-c66-1.ng-star-inserted"
         );
@@ -321,7 +314,6 @@ function init() {
 
               populateNewSamFormFields(fields);
             });
-            //searchSam();
           } else {
             console.log(`result`, result);
           }
@@ -335,8 +327,6 @@ function init() {
           if (result && result.source) {
             let interval = setInterval(() => {
               if (document.getElementById("primary-content")) {
-                // postRecord(record, 'SAM', 'https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm');
-                // navigate(record, "SAM", false);
                 clearInterval(interval);
               }
             }, 1000);
@@ -348,47 +338,12 @@ function init() {
         chrome.storage.sync.get(["source"], async function (result) {
           if (result && result.source) {
             if (window.location.hostname === "www.google.com") {
-              let captureElement = document.getElementsByTagName("body")[0];
+              const pdf = await generateAndSavePdf("google.pdf", "l", "in");
+              let doc = { google: btoa(pdf) };
+              postDocument(doc);
+              await sleep(2000);
 
-              let width = captureElement.scrollWidth;
-              let height = captureElement.scrollHeight;
-              const opt = {
-                margin: 0,
-                filename: "google.pdf",
-                image: { type: "jpeg", quality: 1 },
-                html2canvas: { scale: 1 },
-                enableLinks: false,
-                css_media_type: "print",
-                jsPDF: {
-                  orientation: "l",
-                  unit: "in",
-                  format: "tabloid",
-                  putOnlyUsedFonts: true,
-                  floatPrecision: 16, // or "smart", default is 16
-                },
-                html2canvas: {
-                  dpi: 300,
-                  // letterRendering: true,
-                  height: height,
-                  width: width,
-                  useCORS: true,
-                },
-              };
-              await html2pdf().from(captureElement).set(opt).save();
-
-              try {
-                await html2pdf()
-                  .from(captureElement)
-                  .set(opt)
-                  .outputPdf()
-                  .then(function (pdf) {
-                    let doc = { google: btoa(pdf) };
-                    postDocument(doc);
-                    navigate("https://clientconnect.otes.com/login");
-                  });
-              } catch (err) {
-                console.log("err:", err);
-              }
+              window.location.href = "https://clientconnect.otes.com/login";
             }
           }
         });
@@ -437,22 +392,6 @@ function init() {
         });
         break;
       }
-      // case '/SAM/pages/public/searchRecords/advancedPIRSearch.jsf': {
-      // 	chrome.storage.sync.get(['source'], function (result) {
-      // 		if (result && result.source) {
-      // 			searchSam();
-      // 		}
-      // 	});
-      // 	break;
-      // }
-      // case '/SAM/pages/public/searchRecords/advancedPIRSearchResults.jsf': {
-      // 	chrome.storage.sync.get(['source'], function (result) {
-      // 		if (result && result.source) {
-      // 			postSamRecord();
-      // 		}
-      // 	});
-      // 	break;
-      // }
       default:
         return false;
     }
@@ -515,28 +454,13 @@ function fetchCandidateData() {
     try {
       if (result) {
         let { source } = result;
-        console.log("source: ", source);
-
-        // chrome.runtime.sendMessage(
-        //   {
-        //     baseUrl,
-        //     bearerToken,
-        //     prospectEmail,
-        //     type: "fetchCandidateDetails",
-        //   },
-        //   function (response) {
-        //     if (response) {
-        //       let { fields } = response;
         if (source) {
           populateCandidateData(source);
           let submitBtn = document.getElementsByName("Submit")[0];
           submitBtn.click();
         } else {
-          // vNotify.error({ text: "Applicant not found" });
+          vNotify.error({ text: "Applicant not found" });
         }
-        //     }
-        //   }
-        // );
       }
     } catch (err) {
       let desc = `${err.toString()} in fetchCandidateData() in Content Script`;
@@ -558,6 +482,7 @@ function populateCandidateData(fields) {
     for (let key in fields) {
       if (fields.hasOwnProperty(key)) {
         let fieldValue = fields[key];
+
         if (key === "fname") {
           document.getElementsByName("first_name")[0].value = fieldValue;
           chrome.storage.sync.set({
@@ -621,43 +546,12 @@ function populateCandidateData(fields) {
 
 async function getConvictionRecord() {
   try {
-    let captureElement = document.getElementsByTagName("body")[0];
-    const opt = {
-      margin: 0,
-      filename: "vcic.pdf",
-      image: { type: "jpeg", quality: 1 },
-      html2canvas: { scale: 1 },
-      enableLinks: false,
-      jsPDF: {
-        orientation: "p",
-        unit: "mm",
-        format: "tabloid",
-        putOnlyUsedFonts: true,
-        floatPrecision: 16, // or "smart", default is 16
-      },
-      html2canvas: {
-        // dpi: 300,
-        // letterRendering: true,
-        useCORS: true,
-      },
-    };
-    await html2pdf().from(captureElement).set(opt).save();
-    try {
-      await html2pdf()
-        .from(captureElement)
-        .set(opt)
-        .outputPdf()
-        .then(function (pdf) {
-          let doc = { vcic: btoa(pdf) };
+    const pdf = await generateAndSavePdf("vcic.pdf", "p", "mm");
+    let doc = { vcic: btoa(pdf) };
+    postDocument(doc);
+    await sleep(2000);
 
-          postDocument(doc);
-          navigate("https://exclusions.oig.hhs.gov/");
-        });
-    } catch (err) {
-      console.log("error: ", err);
-      let desc = `${err.toString()} in getConvictionRecord() in Content Script`;
-      console.log(desc);
-    }
+    window.location.href = "https://exclusions.oig.hhs.gov/";
   } catch (err) {
     let desc = `${err.toString()} in getConvictionRecord() in Content Script`;
     console.log(desc);
@@ -678,9 +572,9 @@ function populateAhsLoginFields() {
         document.getElementsByName("fname")[0].value = firstName;
         document.getElementsByName("lname")[0].value = lastName;
         document.getElementsByName("ID")[0].value = orgId;
-        // document.getElementsByName('personalPassword')[0].value = 'Williston3!';
         document.getElementsByName("personalPassword")[0].value =
           result.ahsPassword;
+        // current = Williston3!
         document.getElementsByName("login")[0].click();
       }
     } catch (err) {
@@ -961,52 +855,68 @@ function populateAhsFormFields(fields) {
     for (let key in fields) {
       if (fields.hasOwnProperty(key)) {
         let fieldValue = fields[key];
-        if (key === "fname") {
-          document.getElementById("firstn").value = fieldValue;
-        }
-        if (key === "lname") {
-          document.getElementById("lastn").value = fieldValue;
-        }
-        if (key === "gender") {
-          let genderInp = document.getElementsByName("gender");
-          fieldValue === "Male" || fieldValue === "male"
-            ? (genderInp[1].checked = true)
-            : (genderInp[0].checked = true);
-        }
-        if (key === "last4ssn") {
-          document.getElementsByName("ssn")[0].value = fieldValue;
-        }
-        if (key === "street") {
-          document.getElementById("address").value = fieldValue;
-        }
-        if (key === "city") {
-          document.getElementById("city").value = fieldValue;
-        }
-        if (key === "state") {
-          fieldValue = getStateAbriviaiton(fieldValue);
-          document.getElementById("state").value = fieldValue;
-        }
-        if (key === "zip") {
-          document.getElementById("zip").value = fieldValue;
-        }
-        if (key === "bday") {
-          let dobField = document.getElementById("dob");
-          fieldValue = new Date(fieldValue).toISOString();
-          let field = fieldValue.split("T")[0];
-          field = field.split("-");
-          let year = field[0],
-            month = field[1],
-            day = field[2];
-          let dob = `${month}/${day}/${year}`;
-          if (dobField.value === "") {
-            document.getElementById("dob").value = dob;
+        switch (key) {
+          case "fname": {
+            document.getElementById("firstn").value = fieldValue;
+            break;
           }
-        }
-        if (key === "birthplace") {
-          document.getElementById("pob").value = fieldValue;
-        }
-        if (key === "mname") {
-          document.getElementById("MI").value = fieldValue;
+          case "lname": {
+            document.getElementById("lastn").value = fieldValue;
+            break;
+          }
+          case "gender": {
+            let genderInp = document.getElementsByName("gender");
+            fieldValue === "Male" || fieldValue === "male"
+              ? (genderInp[1].checked = true)
+              : (genderInp[0].checked = true);
+            break;
+          }
+          case "last4ssn": {
+            document.getElementsByName("ssn")[0].value = fieldValue;
+            break;
+          }
+          case "street": {
+            document.getElementById("address").value = fieldValue;
+            break;
+          }
+          case "city": {
+            document.getElementById("city").value = fieldValue;
+            break;
+          }
+          case "state": {
+            fieldValue = getStateAbriviaiton(fieldValue);
+            document.getElementById("state").value = fieldValue;
+            break;
+          }
+          case "zip": {
+            document.getElementById("zip").value = fieldValue;
+            break;
+          }
+          case "bday": {
+            let dobField = document.getElementById("dob");
+            fieldValue = new Date(fieldValue).toISOString();
+            let field = fieldValue.split("T")[0];
+            field = field.split("-");
+            let year = field[0],
+              month = field[1],
+              day = field[2];
+            let dob = `${month}/${day}/${year}`;
+            if (dobField.value === "") {
+              document.getElementById("dob").value = dob;
+            }
+            break;
+          }
+          case "birthplace": {
+            document.getElementById("pob").value = fieldValue;
+            break;
+          }
+          case "mname": {
+            document.getElementById("MI").value = fieldValue;
+            break;
+          }
+          default: {
+            break;
+          }
         }
       }
     }
@@ -1017,325 +927,14 @@ function populateAhsFormFields(fields) {
     console.log(desc);
   }
 }
-/*
- * Submit the verification form
- */
-function submitVerificationForm() {
-  try {
-    let btnContainer = document.getElementsByClassName("verify")[0];
-    let btn = document.createElement("button");
-
-    let btnFetch = document.createElement("button");
-    btn.innerText = "Verify";
-    btnFetch.innerText = "Fetch AHS Status";
-    btn.className = "btn-verify";
-    btnFetch.className = "btn-verify";
-    btn.id = "verifybtn";
-    btnFetch.id = "fetchbtn";
-    btn.style.width = "132px";
-    btnContainer.appendChild(btn);
-    btnContainer.appendChild(btnFetch);
-
-    document
-      .getElementById("verifybtn")
-      .addEventListener("click", function (e) {
-        e.preventDefault();
-        let last4ssn = document.getElementById("last4ssn").value;
-        let ssn = document.getElementById("ssn").value;
-        let email = document.getElementById("email").value;
-
-        let zip = document.getElementById("zip").value;
-
-        let bday = document.getElementById("bday").value;
-        if (!bday) {
-          alert("Please fill out all fields");
-        } else {
-          if (
-            document.getElementById("fname").value &&
-            document.getElementById("lname").value &&
-            document.getElementById("mname").value &&
-            // document.getElementById("altfname1").value &&
-            // document.getElementById("altlname1").value &&
-            // document.getElementById("altfname2").value &&
-            // document.getElementById("altlname2").value &&
-            document.getElementById("ssn").value &&
-            last4ssn &&
-            document.getElementById("street").value &&
-            document.getElementById("city").value &&
-            document.getElementById("city2").value &&
-            document.getElementById("state").value &&
-            document.getElementById("state2").value &&
-            document.getElementById("country").value &&
-            zip &&
-            document.getElementById("keyword").value &&
-            bday &&
-            (document.getElementById("male").checked === true ||
-              document.getElementById("female").checked === true ||
-              document.getElementById("other").checked === true)
-          ) {
-            if (
-              email.length > 1 &&
-              email.includes("@") &&
-              email.includes(".")
-            ) {
-              if (zip.length === 5 && !isNaN(zip) && zip > 0) {
-                if (ssn <= 0 || last4ssn <= 0) {
-                  alert("Please enter a valid SSN");
-                } else {
-                  if (last4ssn.length === 4 && !isNaN(last4ssn)) {
-                    let today = new Date();
-                    let bdayDate = new Date(bday);
-                    if (bdayDate > today) {
-                      alert("Birthdate cannot be in the future");
-                    } else {
-                      let gender =
-                        document.getElementById("male").checked === true
-                          ? "male"
-                          : "female";
-                      // is using female fine instead of empty string?
-                      let id = document.getElementById("user_id").value;
-                      if (id) {
-                        // => if id exists, then saving it for the pdf documents to be sent against this id
-                        // => if id doesn't exist, then it's a new user and we don't need to save it, because id will be generated by the server
-                        // => if the user loads an existing data, then changes the ssn and presses submit, then the id will be saved, but we need new id for the pdf documents
-                        //       in this case, since the ssn is changed, it is considered as a new userData, and it be overwritten by the id received from the server
-                        chrome.storage.sync.set(
-                          {
-                            id: document.getElementById("user_id").value,
-                          },
-                          function () {
-                            console.log("id set");
-                          }
-                        );
-                      }
-                      chrome.storage.sync.set(
-                        {
-                          source: {
-                            fname: document.getElementById("fname").value,
-                            lname: document.getElementById("lname").value,
-                            gender: gender,
-                            mname: document.getElementById("mname").value,
-                            altfname1:
-                              document.getElementById("altfname1").value,
-                            altlname1:
-                              document.getElementById("altlname1").value,
-                            altfname2:
-                              document.getElementById("altfname2").value,
-                            altlname2:
-                              document.getElementById("altlname2").value,
-                            ssn: document.getElementById("ssn").value,
-                            last4ssn: document.getElementById("last4ssn").value,
-                            street: document.getElementById("street").value,
-                            city: document.getElementById("city").value,
-                            state: document.getElementById("state").value,
-                            zip: document.getElementById("zip").value,
-                            keyword: document.getElementById("keyword").value,
-                            birthplace: `${
-                              document.getElementById("city2").value
-                            }, ${document.getElementById("state2").value}, ${
-                              document.getElementById("country").value
-                            }`,
-                            bday: document.getElementById("bday").value,
-                            email: document.getElementById("email").value,
-                          },
-                        },
-                        function () {
-                          console.log("data saved");
-                          chrome.storage.sync.get(
-                            ["source"],
-                            function (result) {
-                              console.log("saved data: ", result.source);
-                              clearVerificationFields();
-                            }
-                          );
-                          postData();
-                        }
-                      );
-                      chrome.storage.sync.remove("ahsData", function () {
-                        console.log("ahsData removed");
-                      });
-                      // chrome.tabs.create({
-                      //   url: `https://secure.vermont.gov/DPS/criminalrecords/subscriber?email=${email}`,
-                      // });
-
-                      window.open(
-                        `https://secure.vermont.gov/DPS/criminalrecords/subscriber?email=${email}&name=${
-                          document.getElementById("fname").value
-                        }`,
-                        "_blank"
-                      );
-                      chrome.tabs.query(
-                        { active: true, currentWindow: true },
-                        function (tabs) {
-                          chrome.tabs.executeScript(
-                            tabs[0].id,
-                            { file: "content-script.js" },
-                            function (result) {
-                              console.log(result);
-                            }
-                          );
-                        }
-                      );
-                    }
-                  } else {
-                    alert("Please enter a valid last 4 digits of SSN");
-                  }
-                }
-              } else {
-                alert("Please enter a valid zip code");
-              }
-            } else {
-              alert("Please enter a valid email address");
-            }
-          } else {
-            alert("Please fill out all fields");
-          }
-        }
-      });
-    document.getElementById("fetchbtn").addEventListener("click", function (e) {
-      e.preventDefault();
-      let created_at = document.getElementById("created_at").value;
-      let date = new Date(created_at);
-      let yyyy = date.getFullYear();
-
-      let mm = date.getMonth() + 1;
-      if (mm < 10) {
-        mm = "0" + mm;
-      }
-      let dd = date.getDate();
-      let dateString = `${yyyy}-${mm}-${dd}`;
-      let last4ssn = document.getElementById("last4ssn").value;
-      let ssn = document.getElementById("ssn").value;
-      let email = document.getElementById("email").value;
-
-      let zip = document.getElementById("zip").value;
-
-      let bday = document.getElementById("bday").value;
-      if (!bday) {
-        alert("Please fill out all fields");
-      } else {
-        if (
-          document.getElementById("fname").value &&
-          document.getElementById("lname").value &&
-          document.getElementById("mname").value &&
-          document.getElementById("user_id").value &&
-          // document.getElementById("altfname1").value &&
-          // document.getElementById("altlname1").value &&
-          // document.getElementById("altfname2").value &&
-          // document.getElementById("altlname2").value &&
-          document.getElementById("ssn").value &&
-          last4ssn &&
-          document.getElementById("street").value &&
-          document.getElementById("city").value &&
-          document.getElementById("city2").value &&
-          document.getElementById("state").value &&
-          document.getElementById("state2").value &&
-          document.getElementById("country").value &&
-          zip &&
-          document.getElementById("keyword").value &&
-          bday &&
-          (document.getElementById("male").checked === true ||
-            document.getElementById("female").checked === true ||
-            document.getElementById("other").checked === true)
-        ) {
-          if (email.length > 1 && email.includes("@") && email.includes(".")) {
-            if (zip.length === 5 && !isNaN(zip) && zip > 0) {
-              if (ssn <= 0 || last4ssn <= 0) {
-                alert("Please enter a valid SSN");
-              } else {
-                if (last4ssn.length === 4 && !isNaN(last4ssn)) {
-                  let today = new Date();
-                  let bdayDate = new Date(bday);
-                  if (bdayDate > today) {
-                    alert("Birthdate cannot be in the future");
-                  } else {
-                    // let gender =
-                    //   document.getElementById("male").checked === true
-                    //     ? "male"
-                    //     : "";
-                    if (created_at) {
-                      chrome.storage.sync.set(
-                        {
-                          ahsData: {
-                            fname: document.getElementById("fname").value,
-                            lname: document.getElementById("lname").value,
-                            subFname: "Moe",
-                            subLname: "B",
-                            created_at: dateString,
-                          },
-                        },
-                        function () {
-                          console.log(
-                            "Value is set to " +
-                              document.getElementById("fname").value
-                          );
-                        }
-                      );
-                      chrome.storage.sync.set(
-                        {
-                          id: document.getElementById("user_id").value,
-                        },
-                        function () {
-                          console.log("id set");
-                        }
-                      );
-                      // remove source from storage
-                      chrome.storage.sync.remove("source", function () {
-                        console.log("source removed");
-                      });
-                      window.open(
-                        `https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm`,
-                        "_blank"
-                      );
-                      // get current tab and execute script
-                      chrome.tabs.query(
-                        { active: true, currentWindow: true },
-                        function (tabs) {
-                          chrome.tabs.executeScript(
-                            tabs[0].id,
-                            { file: "content_script.js" },
-                            function (result) {
-                              console.log(result);
-                            }
-                          );
-                        }
-                      );
-                    } else {
-                      alert(
-                        "You need to perform the initial search first by pressing the Verify Button"
-                      );
-                    }
-                  }
-                } else {
-                  alert("Please enter a valid last 4 digits of SSN");
-                }
-              }
-            } else {
-              alert("Please enter a valid zip code");
-            }
-          } else {
-            alert("Please enter a valid email address");
-          }
-        } else {
-          alert("Please fill out all fields");
-        }
-      }
-    });
-  } catch (err) {
-    let desc = `${err.toString()} in submitVerificationForm() in Content Script`;
-    console.log(desc);
-  }
-}
 
 /*
  * Fill the Order Applicant form
  */
 function fillApplicantForm() {
   try {
-    chrome.storage.sync.get(["source"], function (result) {
-      console.log("here");
+    chrome.storage.sync.get(["source"], async function (result) {
       if (result.source) {
-        console.log(result.source);
         document.getElementById("name.firstName").value = result.source.fname;
         document.getElementById("name.lastName").value = result.source.lname;
         document.getElementById("name.middleName").value = result.source.mname;
@@ -1349,7 +948,6 @@ function fillApplicantForm() {
             result.source.altfname1;
           document.getElementById("aliases0.name.lastName").value =
             result.source.altlname1;
-          // click button with name add-alias
           document.getElementsByName("add-alias")[0].click();
           document.getElementById("aliases1.name.firstName").value =
             result.source.altfname2;
@@ -1357,16 +955,10 @@ function fillApplicantForm() {
             result.source.altlname2;
         }
         document.getElementById("ssn").value = result.source.ssn;
-        // document.getElementById("last4ssn").value = result.source.last4ssn;
         document.getElementById("currentAddress.street").value =
           result.source.street;
         document.getElementById("currentAddress.city").value =
           result.source.city;
-        // document.getElementById("city2").value = result.source.birthplace;
-        // document.getElementById("state").value = result.source.state;
-        // document.getElementById("state2").value = result.source.birthplace;
-        // find and select country from select list in option groups
-
         let countrySelect = document.getElementById(
           "currentAddress.country.countryId"
         );
@@ -1399,15 +991,13 @@ function fillApplicantForm() {
 
         document.getElementById("currentAddress.zipCode").value =
           result.source.zip;
-        // document.getElementById("keyword").value = result.source.keyword;
         document.getElementById("contactInformation.emailAddress").value =
           result.source.email;
         document.getElementById("dob").value = result.source.bday;
 
-        // setTimeout(() => {
-        //   chrome.storage.sync.remove("source");
-        //   chrome.storage.sync.remove("fields");
-        // }, 1000);
+        await sleep(1000);
+        chrome.storage.sync.remove("source");
+        chrome.storage.sync.remove("fields");
       }
     });
   } catch (err) {
@@ -1426,7 +1016,9 @@ function searchExclusion() {
   });
 }
 
-// perform google search with fname, lname, state, city, and keyword from source
+/**
+ * performing google search with fname, lname, state, city, and keyword from source
+ *  */
 function searchGoogle(fields) {
   try {
     let searchInputGoogle = document.getElementsByClassName("gLFyf gsfi")[0];
@@ -1438,17 +1030,16 @@ function searchGoogle(fields) {
   }
 }
 
-function loginClientConnect() {
+async function loginClientConnect() {
   try {
     let email = document.getElementById("email").value;
     let password = document.getElementById("password").value;
     let loginButton = document.getElementsByClassName("btn btn-primary")[0];
     loginButton.click();
-    setTimeout(() => {
-      let searchInputGoogle = document.getElementsByClassName("gLFyf gsfi")[0];
-      searchInputGoogle.value = `${email} ${password}`;
-      document.getElementsByClassName("gNO89b")[0].click();
-    }, 1000);
+    await sleep(1000);
+    let searchInputGoogle = document.getElementsByClassName("gLFyf gsfi")[0];
+    searchInputGoogle.value = `${email} ${password}`;
+    document.getElementsByClassName("gNO89b")[0].click();
   } catch (err) {
     let desc = `${err.toString()} in loginClientConnect() in Content Script`;
     console.log(desc);
@@ -1465,7 +1056,8 @@ function populateExclusionLogin(fields) {
     if (
       document.getElementsByTagName("h2")[0].innerText === "Service Unavailable"
     ) {
-      navigate("https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm");
+      window.location.href =
+        "https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm";
     } else {
       for (let key in fields) {
         if (fields.hasOwnProperty(key)) {
@@ -1494,182 +1086,77 @@ function populateExclusionLogin(fields) {
  */
 
 async function sendExclusionRecord() {
-  // const conversion = async () => {
-
-  // };
-  console.log("came in exclusion");
-
   try {
-    let captureElement = document.getElementsByTagName("body")[0];
-
-    const opt = {
-      margin: 0,
-      filename: "oig.pdf",
-      image: { type: "jpeg", quality: 1 },
-      html2canvas: { scale: 2 },
-      enableLinks: false,
-      jsPDF: {
-        orientation: "p",
-        unit: "mm",
-        format: "tabloid",
-        putOnlyUsedFonts: true,
-        floatPrecision: 16, // or "smart", default is 16
-      },
-      html2canvas: {
-        // dpi: 300,
-        // letterRendering: true,
-        useCORS: true,
-      },
-    };
-    await html2pdf().from(captureElement).set(opt).save();
-    await html2pdf()
-      .from(captureElement)
-      .set(opt)
-      .outputPdf()
-      .then(function (pdf) {
-        let doc = { oig: btoa(pdf) };
-        postDocument(doc);
-      });
-    navigate("https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm");
-    // let exclusionDiv = document.getElementById("ctl00_cpExclusions_pnlEmpty");
-    // if (exclusionDiv) {
-    //   try {
-    //     conversion();
-    //     navigate("https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm");
-    //   } catch (err) {
-    //     let desc = `${err.toString()} in sendExclusionRecord() in Content Script`;
-    //     console.log(desc);
-    //   }
-    // } else {
-    //   try {
-    //     conversion();
-    //     navigate("https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm");
-    //   } catch (err) {
-    //     console.log("err: ", err);
-    //   }
-    // }
+    const pdf = await generateAndSavePdf("oig.pdf", "p", "mm");
+    let doc = { oig: btoa(pdf) };
+    postDocument(doc);
+    await sleep(2000);
+    window.location.href = "https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm";
   } catch (err) {
     let desc = `${err.toString()} in sendExclusionRecord() in Content Script`;
     console.log(desc);
   }
 }
 
-// /**
-//  * search sam website
-//  */
-
-// function searchSam() {
-// 	chrome.storage.sync.get(['fields'], function (result) {
-// 		let { fields } = result;
-// 		populateSamFormFields(fields);
-// 	});
-// }
-
 /**
  * populate the sam form fields
  */
-function populateNewSamFormFields(fields) {
-  setTimeout(() => {
-    try {
-      document.querySelector("#usa-accordion-item-5-header > button").click();
+async function populateNewSamFormFields(fields) {
+  await sleep(3000);
+  try {
+    document.querySelector("#usa-accordion-item-5-header > button").click();
 
-      for (let key in fields) {
-        if (fields.hasOwnProperty(key)) {
-          let fieldValue = fields[key];
-          if (key === "fname") {
-            document.getElementById("firstname").value = fieldValue;
-            document
-              .getElementById("firstname")
-              .dispatchEvent(new CustomEvent("input", { bubbles: true }));
-          }
-          if (key === "lname") {
-            document.getElementById("lastname").value = fieldValue;
-            document
-              .getElementById("lastname")
-              .dispatchEvent(new CustomEvent("input", { bubbles: true }));
-          }
-          if (key === "ssn") {
-            document.getElementById("ssn").value = fieldValue;
-            document
-              .getElementById("ssn")
-              .dispatchEvent(new CustomEvent("input", { bubbles: true }));
-          }
+    for (let key in fields) {
+      if (fields.hasOwnProperty(key)) {
+        let fieldValue = fields[key];
+        if (key === "fname") {
+          document.getElementById("firstname").value = fieldValue;
+          document
+            .getElementById("firstname")
+            .dispatchEvent(new CustomEvent("input", { bubbles: true }));
+        }
+        if (key === "lname") {
+          document.getElementById("lastname").value = fieldValue;
+          document
+            .getElementById("lastname")
+            .dispatchEvent(new CustomEvent("input", { bubbles: true }));
+        }
+        if (key === "ssn") {
+          document.getElementById("ssn").value = fieldValue;
+          document
+            .getElementById("ssn")
+            .dispatchEvent(new CustomEvent("input", { bubbles: true }));
         }
       }
-
-      setTimeout(() => {
-        document
-          .querySelector("#usa-accordion-item-5")
-          .getElementsByTagName("button")[0]
-          .click();
-        setTimeout(async () => {
-          if (
-            document
-              .getElementsByTagName("sds-search-result-list")[0]
-              ?.children[0].getElementsByTagName("a")[0]
-          ) {
-            document
-              .getElementsByTagName("sds-search-result-list")[0]
-              .children[0].getElementsByTagName("a")[0]
-              .click();
-          } else {
-            let captureElement = document.getElementsByTagName("body")[0];
-            let width = captureElement.scrollWidth;
-            let height = captureElement.scrollHeight;
-            const opt = {
-              margin: 0,
-              filename: "sam.pdf",
-              image: { type: "jpeg", quality: 1 },
-              html2canvas: { scale: 1 },
-              enableLinks: false,
-              jsPDF: {
-                orientation: "l",
-                unit: "in",
-                format: "tabloid",
-                putOnlyUsedFonts: true,
-                floatPrecision: 16, // or "smart", default is 16
-              },
-              html2canvas: {
-                // dpi: 300,
-                // letterRendering: true,
-                height: height,
-                width: width,
-                useCORS: true,
-              },
-            };
-
-            await html2pdf().from(captureElement).set(opt).save();
-            await html2pdf()
-              .from(captureElement)
-              .set(opt)
-              .outputPdf()
-              .then(function (pdf) {
-                let doc = { sam: btoa(pdf) };
-                postDocument(doc);
-                navigate("https://www.google.com");
-              });
-            return;
-          }
-        }, 2000);
-      }, 3000);
-    } catch (err) {
-      let desc = `${err.toString()} in populateSamFormFields() in Content Script`;
-      console.log(desc);
     }
-  }, 3000);
+    await sleep(3000);
+    document
+      .querySelector("#usa-accordion-item-5")
+      .getElementsByTagName("button")[0]
+      .click();
+    await sleep(2000);
+    if (
+      document
+        .getElementsByTagName("sds-search-result-list")[0]
+        ?.children[0].getElementsByTagName("a")[0]
+    ) {
+      document
+        .getElementsByTagName("sds-search-result-list")[0]
+        .children[0].getElementsByTagName("a")[0]
+        .click();
+    } else {
+      const pdf = await generateAndSavePdf("sam.pdf", "l", "in");
+      let doc = { sam: btoa(pdf) };
+      postDocument(doc);
+      await sleep(2000);
+      window.location.href = "https://www.google.com";
+    }
+  } catch (err) {
+    let desc = `${err.toString()} in populateSamFormFields() in Content Script`;
+    console.log(desc);
+  }
 }
 
-/**
- * This function sends message to background
- * to post record retreived from the verification website
- * @param {string} record | record to be posted
- * @param {string} siteName | name of site from which record was verified
- *  @param {string} redirect | site on to which redirect upon record successfully posted
- */
-
-function navigate(redirect) {
-  window.location.href = redirect;
-}
 /**
  * This function sends message to background to send the data to the server
  */
@@ -1702,7 +1189,7 @@ function postData() {
 /**
  * This function sends message to background to send the document to the server
  */
-async function postDocument(doc) {
+function postDocument(doc) {
   chrome.storage.sync.get(["id"], function (result) {
     try {
       let id = result.id;
@@ -1717,6 +1204,7 @@ async function postDocument(doc) {
       console.log(desc);
     }
   });
+  return true;
 }
 /**
  * this function sets candidates details and populates the date range field of Ahs record fetch
@@ -1778,11 +1266,10 @@ function populateAhsDate(from, to) {
  */
 
 function searchAhsRecord() {
-  chrome.storage.sync.get(["ahsData"], function (result) {
+  chrome.storage.sync.get(["ahsData"], async function (result) {
     try {
       let { fname, lname, subFname, subLname } = result.ahsData;
       if (fname) {
-        console.log("went in fname");
         let nameRows = document.querySelectorAll("[nowrap]");
         let recordFound = false;
         let firstName = fname;
@@ -1836,9 +1323,8 @@ function searchAhsRecord() {
                 }
                 vNotify.error({ text: "One Record is under process" });
                 alert("One Record is under process");
-                setTimeout(() => {
-                  window.close();
-                }, 5000);
+                await sleep(5000);
+                window.close();
               }
               break;
             }
@@ -1847,10 +1333,9 @@ function searchAhsRecord() {
         if (!recordFound) {
           vNotify.error({ text: "No record found" });
           alert("No record found");
-          setTimeout(() => {
-            chrome.storage.sync.remove("ahsData");
-            window.close();
-          }, 3000);
+          await sleep(3000);
+          chrome.storage.sync.remove("ahsData");
+          window.close();
         }
       }
     } catch (err) {
@@ -1872,46 +1357,17 @@ function postAhsAdultRecord() {
       const urlParams = new URLSearchParams(search);
       let requestId = urlParams.get("requestID");
       let redirectUrl = `https://www.ahsnet.ahs.state.vt.us/ABC/show_clears.cfm?requestID=${requestId}&RegistryRecordTypeID=7`;
-
-      let captureElement = document.getElementsByTagName("body")[0];
-
-      const opt = {
-        margin: 0,
-        filename: "ahs_adult.pdf",
-        image: { type: "jpeg", quality: 1 },
-        html2canvas: { scale: 2 },
-        enableLinks: false,
-        jsPDF: {
-          orientation: "p",
-          unit: "mm",
-          format: "tabloid",
-          putOnlyUsedFonts: true,
-          floatPrecision: 16, // or "smart", default is 16
-        },
-        html2canvas: {
-          // dpi: 300,
-          // letterRendering: true,
-          useCORS: true,
-        },
-      };
-      await html2pdf().from(captureElement).set(opt).save();
-
-      await html2pdf()
-        .from(captureElement)
-        .set(opt)
-        .outputPdf()
-        .then(function (pdf) {
-          let doc = { ahs_adult: btoa(pdf) };
-          postDocument(doc);
-        });
+      const pdf = await generateAndSavePdf("ahs_adult.pdf", "p", "mm");
+      let doc = { ahs_adult: btoa(pdf) };
+      postDocument(doc);
+      await sleep(2000);
       if (child) {
         window.location.href = redirectUrl;
       } else {
-        setTimeout(() => {
-          chrome.storage.sync.remove("ahsData");
-          chrome.storage.sync.remove("ahsRecord");
-          window.close();
-        }, 3000);
+        await sleep(3000);
+        chrome.storage.sync.remove("ahsData");
+        chrome.storage.sync.remove("ahsRecord");
+        window.close();
       }
     } catch (err) {
       let desc = `${err.toString()} in postAhsAdultRecord() in Content Script`;
@@ -1926,42 +1382,14 @@ function postAhsAdultRecord() {
 
 async function postAhsChildRecord() {
   try {
-    let captureElement = document.getElementsByTagName("body")[0];
+    const pdf = await generateAndSavePdf("ahs_child.pdf", "p", "mm");
+    let doc = { ahs_child: btoa(pdf) };
+    postDocument(doc);
 
-    const opt = {
-      margin: 0,
-      filename: "ahs_child.pdf",
-      image: { type: "jpeg", quality: 1 },
-      html2canvas: { scale: 2 },
-      enableLinks: false,
-      jsPDF: {
-        orientation: "p",
-        unit: "mm",
-        format: "tabloid",
-        putOnlyUsedFonts: true,
-        floatPrecision: 16, // or "smart", default is 16
-      },
-      html2canvas: {
-        // dpi: 300,
-        // letterRendering: true,
-        useCORS: true,
-      },
-    };
-    await html2pdf().from(captureElement).set(opt).save();
-
-    await html2pdf()
-      .from(captureElement)
-      .set(opt)
-      .outputPdf()
-      .then(function (pdf) {
-        let doc = { ahs_child: btoa(pdf) };
-        postDocument(doc);
-        setTimeout(() => {
-          chrome.storage.sync.remove("ahsRecord");
-          chrome.storage.sync.remove("ahsData");
-          window.close();
-        }, 3000);
-      });
+    await sleep(3000);
+    chrome.storage.sync.remove("ahsRecord");
+    chrome.storage.sync.remove("ahsData");
+    window.close();
   } catch (err) {
     let desc = `${err.toString()} in postAhsChildRecord() in Content Script`;
     console.log(desc);
@@ -1971,37 +1399,21 @@ async function postAhsChildRecord() {
 /**
  * this function performs the sign in process to otes.okta.com
  * */
-
-const signInOkta = () => {
-  console.log("trying signin");
-
-  if (document.getElementById("okta-signin-submit")) {
-    if (document.getElementById("okta-signin-username")) {
-      document.getElementById("okta-signin-username").value =
-        "m@tlcnursing.com";
-    }
-    if (document.getElementById("okta-signin-password")) {
-      document.getElementById("okta-signin-password").value = "Williston1550!";
-    }
-    document.getElementById("okta-signin-submit").click();
+const signInOkta = async () => {
+  await sleep(2500);
+  let idpUsername = document.getElementById("idp-discovery-username");
+  let idpSubmit = document.getElementById("idp-discovery-submit");
+  if (idpUsername) {
+    idpUsername.value = "m@tlcnursing.com";
+    idpUsername.dispatchEvent(new CustomEvent("input", { bubbles: true }));
+    idpSubmit.click();
   }
-  if (document.getElementById("idp-discovery-submit")) {
-    if (document.getElementById("idp-discovery-username")) {
-      document.getElementById("idp-discovery-username").value =
-        "m@tlcnursing.com";
-    }
-    if (document.getElementById("idp-discovery-password")) {
-      document.getElementById("idp-discovery-password").value =
-        "Williston1550!";
-    }
-    document.getElementById("idp-discovery-submit").click();
+  await sleep(4000);
+  let oktaPassword = document.getElementById("okta-signin-password");
+  let oktaSubmit = document.getElementById("okta-signin-submit");
+  if (oktaPassword) {
+    oktaPassword.value = "Williston1550!";
+    oktaPassword.dispatchEvent(new CustomEvent("input", { bubbles: true }));
+    oktaSubmit.click();
   }
-  if (document.getElementById("form18")) {
-    document.getElementById("form18").submit();
-  }
-
-  // let buttonBar = document.getElementsByClassName("o-form-button-bar")[0];
-  // if (buttonBar) {
-  //   buttonBar.click();
-  // }
 };

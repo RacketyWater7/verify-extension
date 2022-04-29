@@ -1,48 +1,6 @@
-//Add event listener to the submit option values button
-// let submitBtn = document.getElementById("submitBtn");
-// submitBtn.addEventListener("click", getOptionValues);
-
-// /**
-//  * gets options values set by the user
-//  */
-
-// function getOptionValues() {
-//   //get values from user options
-//   let baseUrl = document.getElementById("baseUrl").value;
-//   console.log(baseUrl);
-//   let bearerToken = document.getElementById("bearerToken").value;
-//   let ahsPassword = document.getElementById("ahsPassword").value;
-//   if (baseUrl !== "" && bearerToken !== "") {
-//     //Set the pandadocapi to chrome storage
-//     chrome.storage.sync.set({
-//       baseUrl: baseUrl,
-//       bearerToken: bearerToken,
-//       ahsPassword: ahsPassword,
-//     });
-//     window.close();
-//   }
-// }
-
-// //get options user set from chrome storage
-// chrome.storage.sync.get(
-//   ["baseUrl", "bearerToken", "ahsPassword"],
-//   function (result) {
-//     console.log(result);
-//     if (result.baseUrl != undefined && result.bearerToken != undefined) {
-//       //get values from user options
-//       document.getElementById("baseUrl").value = result.baseUrl;
-//       document.getElementById("bearerToken").value = result.bearerToken;
-//       document.getElementById("ahsPassword").value = result.ahsPassword;
-//     }
-//   }
-// );
-
-//////////////////////////////////////////////
-
-//Add event listener to the fetch the api tken as Bearer Token
 let fetchToken = document.getElementById("fetchBtn");
 fetchToken.addEventListener("click", fetchApiToken);
-//Add event listener to the submit option values button
+
 let submitBtn = document.getElementById("submitBtn");
 submitBtn.addEventListener("click", submitDetails);
 
@@ -97,14 +55,6 @@ function submitDetails() {
   let bearerToken = document.getElementById("bearerToken");
 
   if (username && password && ahsPassword && baseUrl && bearerToken.value) {
-    // let auth = {
-    //   baseUrl,
-    //   username,
-    //   password,
-    //   bearerToken: bearerToken.value,
-    // };
-    // console.log("auth", auth);
-    // chrome.storage.sync.set({ auth });
     chrome.storage.sync.set({
       baseUrl: baseUrl,
       bearerToken: bearerToken.value,
@@ -112,9 +62,12 @@ function submitDetails() {
       ahsPassword: ahsPassword,
       username: username,
     });
-    // window.close();
+    showNotification("success", "Options saved successfully");
+    setTimeout(function () {
+      window.close();
+    }, 1000);
   } else {
-    alert("Please enter valid credentials !");
+    showNotification("error", "Please enter valid credentials !");
   }
 }
 
@@ -130,6 +83,21 @@ function fetchOptions() {
       document.getElementById("bearerToken").value = bearerToken;
     }
   });
+}
+
+function showNotification(type, text) {
+  var x = document.getElementById("snackbar");
+  if (type == "success") {
+    x.style.backgroundColor = "rgb(76, 165, 16)";
+  }
+  if (type == "error") {
+    x.style.backgroundColor = "#a52610";
+  }
+  x.innerText = text;
+  x.className = "show";
+  setTimeout(function () {
+    x.className = x.className.replace("show", "");
+  }, 3000);
 }
 
 // __________________________________________;
