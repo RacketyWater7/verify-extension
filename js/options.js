@@ -9,6 +9,7 @@ fetchOptions();
 
 //Fetch Api Token
 async function fetchApiToken() {
+  showNotification("info", "Pls wait. Fetching API Token...");
   let username = document.getElementById("username").value;
   let password = document.getElementById("password").value;
   let baseUrl = document.getElementById("baseUrl").value;
