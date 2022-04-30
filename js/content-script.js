@@ -78,22 +78,12 @@ function fetchApiKey() {
  */
 // https://secure.vermont.gov/DPS/criminalrecords/subscriber/request.php
 function init() {
-  // below listener is for the case when user is on the React app of extension
+  // below code and hashchange listener is for the case when user is on the React app of extension
+  appUrlDetection();
   window.addEventListener(
     "hashchange",
     function () {
-      let url = window.location.href;
-      url = url.split("/");
-      if (
-        url[url.length - 1] === "add" &&
-        url[url.length - 2] === "verification_form"
-      ) {
-        let btnV = document.getElementById("verifybtn");
-        if (btnV) {
-        } else {
-          submitVerificationForm();
-        }
-      }
+      appUrlDetection();
     },
     false
   );
@@ -107,7 +97,6 @@ function init() {
     if (pathname.includes("/signin/refresh-auth-state")) {
       chrome.storage.sync.get(["source"], function (result) {
         if (result && result.source) {
-          console.log("came in refresh-auth-state");
           signInOkta();
         }
       });
@@ -115,7 +104,6 @@ function init() {
 
     switch (pathname) {
       case "/DPS/criminalrecords/subscriber/": {
-        console.log("inside /DPS/criminalrecords/subscriber/");
         if (search.includes("email")) {
           email = "m@tlcnursing.com";
           password = "1550Williston!";
@@ -125,7 +113,7 @@ function init() {
       }
       case "/DPS/criminalrecords/subscriber/agreement.php": {
         chrome.storage.sync.get(["source"], function (result) {
-          console.log(result);
+          // console.log(result);
           if (result && result.source) {
             populateArgreementFields();
           }
@@ -151,16 +139,13 @@ function init() {
         break;
       }
       case "/ABC/sign_on.cfm": {
-        console.log("at sign on");
         chrome.storage.sync.get(["source"], function (result) {
           if (result && result.source) {
-            console.log("inside source");
             populateAhsLoginFields();
           }
         });
         chrome.storage.sync.get(["ahsData"], function (result) {
           if (result && result.ahsData) {
-            console.log("inside ahsData");
             populateAhsLoginFields();
           }
         });
@@ -308,14 +293,13 @@ function init() {
 
         chrome.storage.sync.get(["source"], function (result) {
           if (result && result.source) {
-            console.log(`result`, result);
             chrome.storage.sync.get(["fields"], function (result) {
               let { fields } = result;
 
               populateNewSamFormFields(fields);
             });
           } else {
-            console.log(`result`, result);
+            // console.log(`result`, result);
           }
         });
 
@@ -417,7 +401,6 @@ function populateLoginFields(email, password) {
     passwordInp.value = password;
     submitBtn.click();
   } catch (err) {
-    console.log("errrr: ", err.toString());
     let desc = `${err.toString()} in populateLoginFields() in Content Script`;
     console.log(desc);
   }
@@ -428,7 +411,7 @@ function populateLoginFields(email, password) {
  */
 function populateArgreementFields() {
   try {
-    console.log(document.getElementsByName("modification"));
+    // console.log(document.getElementsByName("modification"));
     let modification = document.getElementsByName("modification")[0];
     let disclosure = document.getElementsByName("disclosure")[0];
     let pay = document.getElementsByName("pay")[0];
@@ -540,6 +523,24 @@ function populateCandidateData(fields) {
 }
 
 /**
+ * App URL detection
+ */
+function appUrlDetection() {
+  let url = window.location.href;
+  url = url.split("/");
+  if (
+    url[url.length - 1] === "add" &&
+    url[url.length - 2] === "verification_form"
+  ) {
+    let btnV = document.getElementById("verifybtn");
+    if (btnV) {
+    } else {
+      submitVerificationForm();
+    }
+  }
+}
+
+/**
  * get conviction record on candidate data submit
  * send request to background page to request the data obtained to api
  */
@@ -564,7 +565,7 @@ async function getConvictionRecord() {
 function populateAhsLoginFields() {
   chrome.storage.sync.get(["ahsPassword"], function (result) {
     try {
-      console.log(result);
+      // console.log(result);
       if (result.ahsPassword != undefined) {
         let firstName = "Moe";
         let lastName = "B";
@@ -1173,7 +1174,7 @@ function postData() {
                 id: response.data.id,
               },
               function () {
-                console.log("id set");
+                // console.log("id set");
                 return true;
               }
             );
@@ -1196,7 +1197,7 @@ function postDocument(doc) {
       chrome.runtime.sendMessage(
         { baseUrl, bearerToken, doc, id, type: "postDoc" },
         function (response) {
-          console.log("response: ", response);
+          // console.log("response: ", response);
         }
       );
     } catch (err) {

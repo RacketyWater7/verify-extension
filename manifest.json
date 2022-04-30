@@ -13,7 +13,6 @@
     "activeTab",
     "scripting",
     "declarativeContent",
-    "activeTab",
     "notifications"
   ],
   "content_security_policy": {

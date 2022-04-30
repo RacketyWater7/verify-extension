@@ -21,6 +21,18 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       });
       return true;
     }
+    case "keepValid": {
+      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.scripting.executeScript(
+          {
+            target: { tabId: tabs[0].id },
+            files: ["js/content-script.js", "js/adminPanel.js"],
+          },
+          function () {}
+        );
+      });
+      return true;
+    }
   }
 });
 

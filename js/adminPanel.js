@@ -119,7 +119,7 @@ function submitVerificationForm() {
                 id: document.getElementById("user_id").value,
               },
               function () {
-                console.log("id set");
+                // console.log("id set");
               }
             );
           }
@@ -149,16 +149,13 @@ function submitVerificationForm() {
               },
             },
             function () {
-              console.log("data saved");
               chrome.storage.sync.get(["source"], function (result) {
-                console.log("saved data: ", result.source);
+                // console.log("saved data: ", result.source);
               });
               postData();
             }
           );
-          chrome.storage.sync.remove("ahsData", function () {
-            console.log("ahsData removed");
-          });
+          chrome.storage.sync.remove("ahsData", function () {});
 
           window.open(
             `https://secure.vermont.gov/DPS/criminalrecords/subscriber?email=${email}&name=${
@@ -166,16 +163,10 @@ function submitVerificationForm() {
             }`,
             "_blank"
           );
-          chrome.tabs.query(
-            { active: true, currentWindow: true },
-            function (tabs) {
-              chrome.tabs.executeScript(
-                tabs[0].id,
-                { file: "content-script.js" },
-                function (result) {
-                  console.log(result);
-                }
-              );
+          chrome.runtime.sendMessage(
+            { type: "keepValid" },
+            function (response) {
+              console.log(response);
             }
           );
         }
@@ -207,39 +198,27 @@ function submitVerificationForm() {
                 created_at: dateString,
               },
             },
-            function () {
-              console.log(
-                "Value is set to " + document.getElementById("fname").value
-              );
-            }
+            function () {}
           );
           chrome.storage.sync.set(
             {
               id: document.getElementById("user_id").value,
             },
             function () {
-              console.log("id set");
+              // console.log("id set");
             }
           );
           // remove source from storage
-          chrome.storage.sync.remove("source", function () {
-            console.log("source removed");
-          });
+          chrome.storage.sync.remove("source", function () {});
           window.open(
             `https://www.ahsnet.ahs.state.vt.us/ABC/sign_on.cfm`,
             "_blank"
           );
-          // get current tab and execute script
-          chrome.tabs.query(
-            { active: true, currentWindow: true },
-            function (tabs) {
-              chrome.tabs.executeScript(
-                tabs[0].id,
-                { file: "content_script.js" },
-                function (result) {
-                  console.log(result);
-                }
-              );
+          // keeping the script alive
+          chrome.runtime.sendMessage(
+            { type: "keepValid" },
+            function (response) {
+              console.log(response);
             }
           );
         }
