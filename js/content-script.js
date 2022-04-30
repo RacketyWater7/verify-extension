@@ -64,7 +64,6 @@ function fetchApiKey() {
         init();
       } else {
         vNotify.error({ text: "Set API Url" });
-        alert("Set API Url");
       }
     } catch (err) {
       let desc = `${err.toString()} in fetchApiKey() in Content Script`;
