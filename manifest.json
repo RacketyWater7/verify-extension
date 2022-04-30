@@ -1,7 +1,7 @@
 {
-  "name": "Verify Extension",
+  "name": "Verification Extension",
   "description": "Building forms",
-  "version": "1.0",
+  "version": "0.9.0",
   "manifest_version": 3,
   "host_permissions": ["<all_urls>"],
   "background": {
@@ -23,6 +23,7 @@
     "page": "options.html"
   },
   "action": {
+    "default_popup": "/html/popup.html",
     "default_icon": {
       "16": "/images/16.png",
       "32": "/images/32.png",
@@ -43,6 +44,7 @@
         "/js/vanilla-notify.js",
         "/js/html2pdf.bundle.min.js",
         "/js/content-script.js",
+        "/js/popup.js",
         "/js/adminPanel.js"
       ],
       "run_at": "document_end"
