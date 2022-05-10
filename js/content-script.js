@@ -7,13 +7,39 @@
  */
 async function generateAndSavePdf(fileName, orientation, unit) {
   try {
+    const image = document.getElementsByClassName("sds-header__logo")[0];
+    if (image) {
+      // editing the SAM logo to add width and height
+      fetch(image.src)
+        .then((res) => res.text())
+        .then((data) => {
+          const parser = new DOMParser();
+          const svg = parser
+            .parseFromString(data, "image/svg+xml")
+            .querySelector("svg");
+
+          if (image.id) svg.id = image.id;
+          if (image.className) svg.classList = image.classList;
+          svg.setAttribute("x", "0");
+          svg.setAttribute("y", "0");
+          svg.setAttribute("width", "200");
+          svg.setAttribute("height", "50");
+          let aTag = image.parentNode;
+          let header = image.parentNode.parentNode;
+          aTag.parentNode.removeChild(aTag);
+          header.appendChild(svg);
+        });
+      await sleep(2000);
+    }
     let captureElement = document.getElementsByTagName("body")[0];
+
     const opt = {
       margin: 0,
       filename: `${fileName}`,
       image: { type: "jpeg", quality: 1 },
       html2canvas: { scale: 1 },
       enableLinks: false,
+
       jsPDF: {
         orientation: `${orientation}`,
         unit: `${unit}`,
@@ -1104,6 +1130,12 @@ async function sendExclusionRecord() {
 async function populateNewSamFormFields(fields) {
   await sleep(3000);
   try {
+    btnClose = document.getElementsByClassName(
+      "close-btn ng-tns-c72-1 ng-star-inserted"
+    )[0];
+    if (btnClose) {
+      btnClose.click();
+    }
     document.querySelector("#usa-accordion-item-5-header > button").click();
 
     for (let key in fields) {
