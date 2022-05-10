@@ -1246,7 +1246,17 @@ function postDocument(doc) {
 
 function fetchAhsRequestDetails(data) {
   if (data) {
-    let fromDate = formatAhsDate(data.created_at);
+    let from = new Date(data.created_at);
+    // checking if from and current date are the same then minus 1 day from the "from" date
+    if (
+      from.getDate() === new Date().getDate() &&
+      from.getMonth() === new Date().getMonth() &&
+      from.getFullYear() === new Date().getFullYear()
+    ) {
+      from.setDate(from.getDate() - 1);
+    }
+
+    let fromDate = formatAhsDate(from);
     let toDate = formatAhsDate(new Date());
     populateAhsDate(fromDate, toDate);
   }
