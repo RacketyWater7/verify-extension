@@ -9,7 +9,7 @@ fetchOptions();
 
 //Fetch Api Token
 async function fetchApiToken() {
-  showNotification("info", "Pls wait. Fetching API Token...");
+  showNotification("info", "Please wait. Fetching API Token...");
   let username = document.getElementById("username").value;
   let password = document.getElementById("password").value;
   let baseUrl = document.getElementById("baseUrl").value;
@@ -42,6 +42,8 @@ async function fetchApiToken() {
         bearerToken.value = api_token;
       }
     } catch (error) {
+      showNotification("error", "Please enter valid credentials!");
+      console.log("error", error);
       return undefined;
     }
   }
@@ -55,7 +57,13 @@ function submitDetails() {
   let baseUrl = document.getElementById("baseUrl").value;
   let bearerToken = document.getElementById("bearerToken");
 
-  if (username && password && ahsPassword && baseUrl && bearerToken.value) {
+  if (
+    username &&
+    password &&
+    ahsPassword === "Williston3!" &&
+    baseUrl &&
+    bearerToken.value
+  ) {
     chrome.storage.sync.set({
       baseUrl: baseUrl,
       bearerToken: bearerToken.value,
@@ -68,7 +76,11 @@ function submitDetails() {
       window.close();
     }, 1000);
   } else {
-    showNotification("error", "Please enter valid credentials !");
+    if (ahsPassword !== "Williston3!") {
+      showNotification("error", "Please enter valid AHS password.");
+    } else {
+      showNotification("error", "Please enter valid credentials !");
+    }
   }
 }
 

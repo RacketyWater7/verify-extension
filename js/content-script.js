@@ -108,6 +108,7 @@ function init() {
   window.addEventListener(
     "hashchange",
     function () {
+      console.log("hashchange");
       appUrlDetection();
     },
     false
@@ -269,14 +270,15 @@ function init() {
         break;
       }
       case "/": {
-        let url = window.location.href;
-        url = url.split("/");
-        if (
-          url[url.length - 1] === "add" &&
-          url[url.length - 2] === "verification_form"
-        ) {
-          submitVerificationForm();
-        }
+        // let url = window.location.href;
+        // url = url.split("/");
+        // if (
+        //   url[url.length - 1] === "add" &&
+        //   url[url.length - 2] === "verification_form"
+        // ) {
+        //   console.log("trigger");
+        //   submitVerificationForm();
+        // }
         chrome.storage.sync.get(["source"], function (result) {
           if (result && result.source) {
             if (window.location.hostname === "exclusions.oig.hhs.gov") {

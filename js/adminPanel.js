@@ -83,18 +83,22 @@ function validateFields() {
 function submitVerificationForm() {
   try {
     let btnContainer = document.getElementsByClassName("verify")[0];
-    let btn = document.createElement("button");
-
-    let btnFetch = document.createElement("button");
-    btn.innerText = "Verify";
-    btnFetch.innerText = "Fetch AHS Status";
-    btn.className = "btn-verify";
-    btnFetch.className = "btn-verify";
-    btn.id = "verifybtn";
-    btnFetch.id = "fetchbtn";
-    btn.style.width = "132px";
-    btnContainer.appendChild(btn);
-    btnContainer.appendChild(btnFetch);
+    let fetchButton = document.getElementById("fetchbtn");
+    let verifyButton = document.getElementById("verifybtn");
+    if (fetchButton && verifyButton) {
+    } else {
+      let btn = document.createElement("button");
+      let btnFetch = document.createElement("button");
+      btn.innerText = "Verify";
+      btnFetch.innerText = "Fetch AHS Status";
+      btn.className = "btn-verify";
+      btnFetch.className = "btn-verify";
+      btn.id = "verifybtn";
+      btnFetch.id = "fetchbtn";
+      btn.style.width = "132px";
+      btnContainer.appendChild(btn);
+      btnContainer.appendChild(btnFetch);
+    }
 
     document
       .getElementById("verifybtn")

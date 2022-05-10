@@ -28,10 +28,13 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             target: { tabId: tabs[0].id },
             files: ["js/content-script.js", "js/adminPanel.js"],
           },
-          function () {}
+          function () {
+            return Promise.resolve("Dummy response to keep the console quiet");
+          }
         );
       });
-      return true;
+      // return true;
+      return Promise.resolve("Dummy response to keep the console quiet");
     }
   }
 });
