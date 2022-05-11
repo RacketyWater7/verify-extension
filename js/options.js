@@ -39,7 +39,6 @@ async function fetchApiToken() {
       if (responseBody && responseBody) {
         let { api_token } = responseBody.data;
         bearerToken.value = api_token;
-        // document.getElementById("bearerToken").style.borderColor = "";
         chrome.storage.sync.set({
           baseUrl: baseUrl,
           bearerToken: bearerToken.value,
@@ -61,42 +60,6 @@ async function fetchApiToken() {
     showNotification("error", "Please enter valid credentials!");
   }
 }
-
-//submit detail
-// function submitDetails() {
-//   let username = document.getElementById("username").value;
-//   let password = document.getElementById("password").value;
-//   let ahsPassword = document.getElementById("ahspassword").value;
-//   let baseUrl = document.getElementById("baseUrl").value;
-//   let bearerToken = document.getElementById("bearerToken");
-//   applyBorderColor();
-//   if (bearerToken.value == "") {
-//     document.getElementById("bearerToken").style.borderColor = "red";
-//   } else {
-//     document.getElementById("bearerToken").style.borderColor = "";
-//   }
-//   if (
-//     username &&
-//     password &&
-//     ahsPassword === "Williston3!" &&
-//     baseUrl &&
-//     bearerToken.value
-//   ) {
-//     chrome.storage.sync.set({
-//       baseUrl: baseUrl,
-//       bearerToken: bearerToken.value,
-//       password: password,
-//       ahsPassword: ahsPassword,
-//       username: username,
-//     });
-//     showNotification("success", "Options saved successfully");
-// setTimeout(function () {
-//   window.close();
-// }, 1000);
-//   } else {
-//     showNotification("error", "Please enter valid credentials !");
-//   }
-// }
 
 //get already set values
 function fetchOptions() {
