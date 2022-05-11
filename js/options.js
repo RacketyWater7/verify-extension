@@ -1,21 +1,20 @@
 let fetchToken = document.getElementById("fetchBtn");
 fetchToken.addEventListener("click", fetchApiToken);
 
-let submitBtn = document.getElementById("submitBtn");
-submitBtn.addEventListener("click", submitDetails);
-
 //to fetch values if already set
 fetchOptions();
 
 //Fetch Api Token
 async function fetchApiToken() {
-  showNotification("info", "Please wait. Fetching API Token...");
   let username = document.getElementById("username").value;
   let password = document.getElementById("password").value;
   let baseUrl = document.getElementById("baseUrl").value;
   let bearerToken = document.getElementById("bearerToken");
+  let ahsPassword = document.getElementById("ahspassword").value;
 
-  if (username && password && baseUrl) {
+  applyBorderColor();
+  if (username && password && baseUrl && ahsPassword === "Williston3!") {
+    showNotification("info", "Please wait. Fetching API Token...");
     baseUrl = baseUrl.replace(/\/$/, "");
     var requestOptions = {
       method: "POST",
@@ -40,64 +39,88 @@ async function fetchApiToken() {
       if (responseBody && responseBody) {
         let { api_token } = responseBody.data;
         bearerToken.value = api_token;
+        // document.getElementById("bearerToken").style.borderColor = "";
+        chrome.storage.sync.set({
+          baseUrl: baseUrl,
+          bearerToken: bearerToken.value,
+          password: password,
+          ahsPassword: ahsPassword,
+          username: username,
+        });
+        showNotification("success", "Options saved successfully");
+        setTimeout(function () {
+          window.close();
+        }, 1000);
       }
     } catch (error) {
       showNotification("error", "Please enter valid credentials!");
       console.log("error", error);
       return undefined;
     }
+  } else {
+    showNotification("error", "Please enter valid credentials!");
   }
 }
 
 //submit detail
-function submitDetails() {
-  let username = document.getElementById("username").value;
-  let password = document.getElementById("password").value;
-  let ahsPassword = document.getElementById("ahspassword").value;
-  let baseUrl = document.getElementById("baseUrl").value;
-  let bearerToken = document.getElementById("bearerToken");
-
-  if (
-    username &&
-    password &&
-    ahsPassword === "Williston3!" &&
-    baseUrl &&
-    bearerToken.value
-  ) {
-    chrome.storage.sync.set({
-      baseUrl: baseUrl,
-      bearerToken: bearerToken.value,
-      password: password,
-      ahsPassword: ahsPassword,
-      username: username,
-    });
-    showNotification("success", "Options saved successfully");
-    setTimeout(function () {
-      window.close();
-    }, 1000);
-  } else {
-    if (ahsPassword !== "Williston3!") {
-      showNotification("error", "Please enter valid AHS password.");
-    } else {
-      showNotification("error", "Please enter valid credentials !");
-    }
-  }
-}
+// function submitDetails() {
+//   let username = document.getElementById("username").value;
+//   let password = document.getElementById("password").value;
+//   let ahsPassword = document.getElementById("ahspassword").value;
+//   let baseUrl = document.getElementById("baseUrl").value;
+//   let bearerToken = document.getElementById("bearerToken");
+//   applyBorderColor();
+//   if (bearerToken.value == "") {
+//     document.getElementById("bearerToken").style.borderColor = "red";
+//   } else {
+//     document.getElementById("bearerToken").style.borderColor = "";
+//   }
+//   if (
+//     username &&
+//     password &&
+//     ahsPassword === "Williston3!" &&
+//     baseUrl &&
+//     bearerToken.value
+//   ) {
+//     chrome.storage.sync.set({
+//       baseUrl: baseUrl,
+//       bearerToken: bearerToken.value,
+//       password: password,
+//       ahsPassword: ahsPassword,
+//       username: username,
+//     });
+//     showNotification("success", "Options saved successfully");
+// setTimeout(function () {
+//   window.close();
+// }, 1000);
+//   } else {
+//     showNotification("error", "Please enter valid credentials !");
+//   }
+// }
 
 //get already set values
 function fetchOptions() {
-  chrome.storage.sync.get(["auth"], function (result) {
-    if (result && result.auth) {
-      let { auth } = result;
-      let { username, password, baseUrl, bearerToken } = auth;
-      document.getElementById("username").value = username;
-      document.getElementById("password").value = password;
-      document.getElementById("baseUrl").value = baseUrl;
-      document.getElementById("bearerToken").value = bearerToken;
+  chrome.storage.sync.get(
+    ["baseUrl", "bearerToken", "password", "ahsPassword", "username"],
+    function (items) {
+      if (items.baseUrl) {
+        document.getElementById("baseUrl").value = items.baseUrl;
+      }
+      if (items.bearerToken) {
+        document.getElementById("bearerToken").value = items.bearerToken;
+      }
+      if (items.password) {
+        document.getElementById("password").value = items.password;
+      }
+      if (items.ahsPassword) {
+        document.getElementById("ahspassword").value = items.ahsPassword;
+      }
+      if (items.username) {
+        document.getElementById("username").value = items.username;
+      }
     }
-  });
+  );
 }
-
 function showNotification(type, text) {
   var x = document.getElementById("snackbar");
   if (type == "success") {
@@ -106,6 +129,9 @@ function showNotification(type, text) {
   if (type == "error") {
     x.style.backgroundColor = "#a52610";
   }
+  if (type == "info") {
+    x.style.backgroundColor = "#00bcd4";
+  }
   x.innerText = text;
   x.className = "show";
   setTimeout(function () {
@@ -113,4 +139,30 @@ function showNotification(type, text) {
   }, 3000);
 }
 
+function applyBorderColor() {
+  let username = document.getElementById("username").value;
+  let password = document.getElementById("password").value;
+  let ahsPassword = document.getElementById("ahspassword").value;
+  let baseUrl = document.getElementById("baseUrl").value;
+  if (username === "") {
+    document.getElementById("username").style.borderColor = "red";
+  } else {
+    document.getElementById("username").style.borderColor = "";
+  }
+  if (password === "") {
+    document.getElementById("password").style.borderColor = "red";
+  } else {
+    document.getElementById("password").style.borderColor = "";
+  }
+  if (ahsPassword === "") {
+    document.getElementById("ahspassword").style.borderColor = "red";
+  } else {
+    document.getElementById("ahspassword").style.borderColor = "";
+  }
+  if (baseUrl === "") {
+    document.getElementById("baseUrl").style.borderColor = "red";
+  } else {
+    document.getElementById("baseUrl").style.borderColor = "";
+  }
+}
 // __________________________________________;
