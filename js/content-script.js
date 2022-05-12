@@ -939,7 +939,7 @@ function populateAhsFormFields(fields) {
             break;
           }
           case "mname": {
-            document.getElementById("MI").value = fieldValue;
+            document.getElementById("MI").value = fieldValue[0];
             break;
           }
           default: {
