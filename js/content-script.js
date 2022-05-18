@@ -982,7 +982,19 @@ function fillApplicantForm() {
           document.getElementById("aliases1.name.lastName").value =
             result.source.altlname2;
         }
-        document.getElementById("ssn").value = result.source.ssn;
+        let ssn = result.source.ssn;
+        ssn =
+          ssn.substring(0, 3) +
+          "-" +
+          ssn.substring(3, 5) +
+          "-" +
+          ssn.substring(5);
+        let orangeSsn = document.getElementById("ssn");
+        orangeSsn.value = ssn;
+        document
+          .getElementById("ssn")
+          .dispatchEvent(new CustomEvent("input", { bubbles: true }));
+
         document.getElementById("currentAddress.street").value =
           result.source.street;
         document.getElementById("currentAddress.city").value =
@@ -1016,7 +1028,8 @@ function fillApplicantForm() {
         if (internationalState) {
           internationalState.value = result.source.state;
         }
-
+        document.getElementById("currentAddress.houseNumber").value =
+          result.source.house_no;
         document.getElementById("currentAddress.zipCode").value =
           result.source.zip;
         document.getElementById("contactInformation.emailAddress").value =
@@ -1198,6 +1211,7 @@ function postData() {
   chrome.storage.sync.get(["source"], function (result) {
     try {
       let data = result.source;
+      console.log("data: ", data);
       chrome.runtime.sendMessage(
         { baseUrl, bearerToken, data, type: "postData" },
         function (response) {

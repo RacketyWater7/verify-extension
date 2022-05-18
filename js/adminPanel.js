@@ -4,10 +4,10 @@
 function validateFields() {
   let fname = document.getElementById("fname").value;
   let lname = document.getElementById("lname").value;
-  let mname = document.getElementById("mname").value;
   let ssn = document.getElementById("ssn").value;
   let last4ssn = document.getElementById("last4ssn").value;
   let street = document.getElementById("street").value;
+  let house_no = document.getElementById("house_no").value;
   let city = document.getElementById("city").value;
   let city2 = document.getElementById("city2").value;
   let state = document.getElementById("state").value;
@@ -20,10 +20,10 @@ function validateFields() {
   let fields = [
     fname,
     lname,
-    mname,
     ssn,
     last4ssn,
     street,
+    house_no,
     city,
     city2,
     state,
@@ -141,6 +141,7 @@ function submitVerificationForm() {
                 ssn: document.getElementById("ssn").value,
                 last4ssn: document.getElementById("last4ssn").value,
                 street: document.getElementById("street").value,
+                house_no: document.getElementById("house_no").value,
                 city: document.getElementById("city").value,
                 state: document.getElementById("state").value,
                 zip: document.getElementById("zip").value,

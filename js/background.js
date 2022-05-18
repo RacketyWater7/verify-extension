@@ -64,6 +64,7 @@ async function sendData(baseUrl, bearerToken, data) {
     formdata.append("ssn", data.ssn);
     formdata.append("last_4_ssn", data.last4ssn);
     formdata.append("street", data.street);
+    formdata.append("house_no", data.house_no);
     formdata.append("city", data.city);
     formdata.append("state", data.state);
     formdata.append("zip", data.zip);
