@@ -1011,6 +1011,39 @@ function fillApplicantForm() {
             break;
           }
         }
+        let driversState = document.getElementById(
+          "driversLicense.licenseState.stateId"
+        );
+        if (driversState) {
+          for (let i = 0; i < driversState.options.length; i++) {
+            if (driversState.options[i].text === result.source.state) {
+              driversState.selectedIndex = i;
+              break;
+            }
+          }
+        }
+        let addressHistory0 = document.getElementById(
+          "addressHistory0.address.state.stateId"
+        );
+        if (addressHistory0) {
+          for (let i = 0; i < addressHistory0.options.length; i++) {
+            if (addressHistory0.options[i].text === result.source.state) {
+              addressHistory0.selectedIndex = i;
+              break;
+            }
+          }
+        }
+        let offenseHistory0 = document.getElementById(
+          "offenses0.address.state.stateId"
+        );
+        if (offenseHistory0) {
+          for (let i = 0; i < offenseHistory0.options.length; i++) {
+            if (offenseHistory0.options[i].text === result.source.state) {
+              offenseHistory0.selectedIndex = i;
+              break;
+            }
+          }
+        }
         let stateSelect = document.getElementById(
           "currentAddress.state.stateId"
         );
