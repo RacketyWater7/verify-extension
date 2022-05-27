@@ -1,6 +1,10 @@
 let fetchToken = document.getElementById("fetchBtn");
 fetchToken.addEventListener("click", fetchApiToken);
-
+//removing the focus on the initial page load
+let user = document.getElementById("username");
+if (user) {
+  user.blur();
+}
 //to fetch values if already set
 fetchOptions();
 
