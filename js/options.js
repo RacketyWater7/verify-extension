@@ -17,7 +17,7 @@ async function fetchApiToken() {
   let ahsPassword = document.getElementById("ahspassword").value;
 
   applyBorderColor();
-  if (username && password && baseUrl && ahsPassword === "Williston3!") {
+  if (username && password && baseUrl && ahsPassword) {
     showNotification("info", "Please wait. Fetching API Token...");
     baseUrl = baseUrl.replace(/\/$/, "");
     var requestOptions = {
